@@ -1,0 +1,59 @@
+# ========== Maven / Java 后端编译产物 ==========
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+HELP.md
+
+# ========== IDEA 配置文件 ==========
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+*.log
+
+# ========== STS / Eclipse ==========
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# ========== VS Code ==========
+.vscode/
+*.code-workspace
+
+# ========== NetBeans ==========
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+# ========== 前端 Vite / Vue 过滤 ==========
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+frontend/node_modules/.bin/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-lock.yaml
+frontend/npm-lock.json
+
+# ========== 本地上传资源目录 ==========
+uploads/
+
+# ========== 本地私有配置（避免密码泄露） ==========
+application-dev.yml
+application-local.yml
+application-test.yml
+*.properties.local
+
+# ========== 系统隐藏文件 ==========
+.DS_Store
+Thumbs.db
