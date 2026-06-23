@@ -66,7 +66,7 @@ CREATE TABLE `item_category` (
 -- 5. 二手物品表
 CREATE TABLE `second_hand_item` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '物品ID',
-    `title` VARCHAR(100) NOT NULL COMMENT '物品标题',
+    `title` VARCHAR(50) NOT NULL COMMENT '物品标题',
     `description` TEXT COMMENT '物品描述',
     `category_id` BIGINT NOT NULL COMMENT '分类ID',
     `price` DECIMAL(10, 2) NOT NULL COMMENT '价格',
@@ -77,6 +77,7 @@ CREATE TABLE `second_hand_item` (
     `status` TINYINT DEFAULT 0 COMMENT '状态: 0-待审核, 1-已发布, 2-已下架, 3-已售出, 4-审核驳回',
     `reject_reason` VARCHAR(255) DEFAULT NULL COMMENT '驳回原因',
     `view_count` INT DEFAULT 0 COMMENT '浏览次数',
+    `tags` VARCHAR(100) DEFAULT NULL COMMENT '商品标签,逗号分隔(最多6个)',
     `publish_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

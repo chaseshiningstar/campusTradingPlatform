@@ -73,6 +73,11 @@ public class SecondHandItem {
     private Integer viewCount;
 
     /**
+     * 商品标签,逗号分隔(最多6个)
+     */
+    private String tags;
+
+    /**
      * 封面图片URL(非数据库字段)
      */
     @TableField(exist = false)

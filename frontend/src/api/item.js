@@ -22,6 +22,17 @@ export function getItemDetail(id) {
 }
 
 /**
+ * AI生成标签
+ */
+export function generateTags(data) {
+  return request({
+    url: '/item/generate-tags',
+    method: 'post',
+    data
+  })
+}
+
+/**
  * 发布物品
  */
 export function publishItem(data) {
@@ -39,10 +50,12 @@ export function publishItem(data) {
   if (data.contactInfo) {
     formData.append('contactInfo', data.contactInfo)
   }
+  if (data.tags) {
+    formData.append('tags', data.tags)
+  }
 
-  // 添加图片
   if (data.images && data.images.length > 0) {
-    data.images.forEach((file, index) => {
+    data.images.forEach((file) => {
       formData.append('images', file)
     })
   }
@@ -74,6 +87,9 @@ export function updateItem(id, data) {
   }
   if (data.contactInfo) {
     formData.append('contactInfo', data.contactInfo)
+  }
+  if (data.tags) {
+    formData.append('tags', data.tags)
   }
 
   if (data.images && data.images.length > 0) {

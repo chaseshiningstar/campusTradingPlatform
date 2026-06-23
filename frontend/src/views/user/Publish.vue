@@ -4,7 +4,7 @@
       <h2>发布二手物品</h2>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="物品标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入物品标题" maxlength="100" show-word-limit />
+          <el-input v-model="form.title" placeholder="请输入物品标题" maxlength="50" show-word-limit />
         </el-form-item>
 
         <el-form-item label="物品分类" prop="categoryId">
@@ -40,15 +40,42 @@
           <el-input v-model="form.contactInfo" placeholder="手机号、微信等" />
         </el-form-item>
 
-        <el-form-item label="物品描述">
+        <el-form-item label="物品描述" prop="description">
           <el-input
             v-model="form.description"
             type="textarea"
             :rows="5"
-            placeholder="详细描述物品的情况..."
-            maxlength="1000"
+            placeholder="详细描述物品的情况（品牌型号、购买时间、使用情况、转手原因等）"
+            maxlength="500"
             show-word-limit
           />
+        </el-form-item>
+
+        <el-form-item label="商品标签">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <el-tag
+              v-for="(tag, index) in form.tags"
+              :key="index"
+              closable
+              @close="removeTag(index)"
+              type="success"
+              size="large"
+            >
+              {{ tag }}
+            </el-tag>
+            <el-button
+              type="primary" size="small" plain
+              @click="handleGenerateTags"
+              :loading="generating"
+              :disabled="!form.description"
+            >
+              <el-icon><MagicStick /></el-icon>
+              AI 生成标签
+            </el-button>
+            <span style="font-size: 12px; color: #909399;">
+              ({{ form.tags.length }}/6 点击生成或手动添加)
+            </span>
+          </div>
         </el-form-item>
 
         <el-form-item label="物品图片">
@@ -63,7 +90,7 @@
           >
             <el-icon><Plus /></el-icon>
           </el-upload>
-          <div class="upload-tip">最多上传9张图片,第一张为封面</div>
+          <div class="upload-tip">最多上传9张图片，第一张为封面</div>
         </el-form-item>
 
         <el-form-item>
@@ -80,13 +107,15 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { publishItem } from '@/api/item'
+import { publishItem, generateTags } from '@/api/item'
 import { getAllCategories } from '@/api/category'
 import { ElMessage } from 'element-plus'
+import { Plus, MagicStick } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
+const generating = ref(false)
 const categories = ref([])
 const fileList = ref([])
 
@@ -98,6 +127,7 @@ const form = reactive({
   conditionLevel: 2,
   contactInfo: '',
   description: '',
+  tags: [],
   images: []
 })
 
@@ -107,7 +137,6 @@ const rules = {
   price: [{ required: true, message: '请输入价格', trigger: 'blur' }]
 }
 
-// 加载分类
 const loadCategories = async () => {
   try {
     const res = await getAllCategories()
@@ -117,7 +146,6 @@ const loadCategories = async () => {
   }
 }
 
-// 处理图片选择
 const handleImageChange = (file, files) => {
   if (files.length > 9) {
     ElMessage.warning('最多上传9张图片')
@@ -127,7 +155,36 @@ const handleImageChange = (file, files) => {
   form.images = files.map(f => f.raw)
 }
 
-// 提交发布
+const removeTag = (index) => {
+  form.tags.splice(index, 1)
+}
+
+const handleGenerateTags = async () => {
+  if (!form.description) {
+    ElMessage.warning('请先填写物品描述')
+    return
+  }
+
+  generating.value = true
+  try {
+    const res = await generateTags({
+      title: form.title,
+      description: form.description
+    })
+    if (res.data && res.data.length > 0) {
+      form.tags = res.data.slice(0, 6)
+      ElMessage.success(`已生成 ${form.tags.length} 个标签，可删除不合适的`)
+    } else {
+      ElMessage.warning('未能生成标签，请手动添加')
+    }
+  } catch (error) {
+    console.error('标签生成失败:', error)
+    ElMessage.error('标签生成失败，将使用本地提取')
+  } finally {
+    generating.value = false
+  }
+}
+
 const handleSubmit = async () => {
   try {
     await formRef.value.validate()
@@ -137,9 +194,15 @@ const handleSubmit = async () => {
       return
     }
 
+    if (form.tags.length === 0) {
+      ElMessage.warning('请生成或手动输入商品标签')
+      return
+    }
+
     loading.value = true
-    await publishItem(form)
-    ElMessage.success('发布成功,等待审核')
+    const submitData = { ...form, tags: form.tags.join(',') }
+    await publishItem(submitData)
+    ElMessage.success('发布成功，等待审核')
     router.push('/my-items')
   } catch (error) {
     console.error('发布失败:', error)

@@ -39,3 +39,9 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+
+# 大模型API配置(用于生成商品标签)
+llm:
+  api-url: https://api.openai.com/v1/chat/completions
+  api-key: your-api-key-here
+  model: gpt-3.5-turbo

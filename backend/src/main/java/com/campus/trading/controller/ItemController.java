@@ -4,15 +4,19 @@ import com.campus.trading.common.PageResult;
 import com.campus.trading.common.Result;
 import com.campus.trading.dto.ItemPublishRequest;
 import com.campus.trading.dto.ItemQueryRequest;
+import com.campus.trading.dto.TagGenerationRequest;
 import com.campus.trading.entity.SecondHandItem;
 import com.campus.trading.interceptor.JwtInterceptor;
 import com.campus.trading.service.ItemService;
+import com.campus.trading.service.TagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 物品控制器
@@ -24,12 +28,12 @@ import org.springframework.web.bind.annotation.*;
 public class ItemController {
 
     private final ItemService itemService;
+    private final TagService tagService;
 
     @Operation(summary = "获取物品列表(分页)")
     @GetMapping("/list")
     public Result<PageResult<SecondHandItem>> getItemList(ItemQueryRequest request) {
         try {
-            // 默认只查询已发布的物品
             if (request.getStatus() == null) {
                 request.setStatus(1);
             }
@@ -109,6 +113,17 @@ public class ItemController {
             request.setSellerId(userId);
             PageResult<SecondHandItem> result = itemService.getItemList(request);
             return Result.success(result);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "AI生成商品标签")
+    @PostMapping("/generate-tags")
+    public Result<List<String>> generateTags(@Valid @RequestBody TagGenerationRequest request) {
+        try {
+            List<String> tags = tagService.generateTags(request.getTitle(), request.getDescription());
+            return Result.success(tags);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

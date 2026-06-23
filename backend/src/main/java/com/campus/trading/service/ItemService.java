@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,12 +48,10 @@ public class ItemService {
                 request.getSellerId()
         );
 
-        // 为每个物品设置封面图
         List<SecondHandItem> records = result.getRecords();
         for (SecondHandItem item : records) {
             List<ItemImage> images = imageMapper.selectByItemId(item.getId());
             if (images != null && !images.isEmpty()) {
-                // 找到封面图
                 ItemImage cover = images.stream()
                         .filter(img -> img.getIsCover() == 1)
                         .findFirst()
@@ -76,21 +72,17 @@ public class ItemService {
             throw new RuntimeException("物品不存在");
         }
 
-        // 增加浏览次数
         item.setViewCount(item.getViewCount() + 1);
         itemMapper.updateById(item);
 
-        // 查询图片列表
         List<ItemImage> images = imageMapper.selectByItemId(id);
         if (images != null && !images.isEmpty()) {
-            // 设置封面图
             ItemImage cover = images.stream()
                     .filter(img -> img.getIsCover() == 1)
                     .findFirst()
                     .orElse(images.get(0));
             item.setCoverImage(cover.getImageUrl());
-            
-            // 设置所有图片URL列表
+
             List<String> imageUrls = images.stream()
                     .map(ItemImage::getImageUrl)
                     .collect(java.util.stream.Collectors.toList());
@@ -105,7 +97,6 @@ public class ItemService {
      */
     @Transactional
     public Long publishItem(ItemPublishRequest request, Long userId) {
-        // 创建物品记录
         SecondHandItem item = new SecondHandItem();
         item.setTitle(request.getTitle());
         item.setDescription(request.getDescription());
@@ -115,12 +106,12 @@ public class ItemService {
         item.setConditionLevel(request.getConditionLevel() != null ? request.getConditionLevel() : 1);
         item.setSellerId(userId);
         item.setContactInfo(request.getContactInfo());
-        item.setStatus(0); // 待审核状态
+        item.setStatus(0);
         item.setViewCount(0);
+        item.setTags(request.getTags());
 
         itemMapper.insert(item);
 
-        // 保存图片
         if (request.getImages() != null && !request.getImages().isEmpty()) {
             saveItemImages(item.getId(), request.getImages());
         }
@@ -138,12 +129,10 @@ public class ItemService {
             throw new RuntimeException("物品不存在");
         }
 
-        // 验证权限
         if (!item.getSellerId().equals(userId)) {
             throw new RuntimeException("无权操作该物品");
         }
 
-        // 更新物品信息
         item.setTitle(request.getTitle());
         item.setDescription(request.getDescription());
         item.setCategoryId(request.getCategoryId());
@@ -151,11 +140,11 @@ public class ItemService {
         item.setOriginalPrice(request.getOriginalPrice());
         item.setConditionLevel(request.getConditionLevel());
         item.setContactInfo(request.getContactInfo());
-        item.setStatus(0); // 重新提交需要重新审核
+        item.setTags(request.getTags());
+        item.setStatus(0);
 
         itemMapper.updateById(item);
 
-        // 更新图片
         if (request.getImages() != null && !request.getImages().isEmpty()) {
             imageMapper.deleteByItemId(itemId);
             saveItemImages(itemId, request.getImages());
@@ -175,7 +164,7 @@ public class ItemService {
             throw new RuntimeException("无权操作该物品");
         }
 
-        item.setStatus(2); // 已下架
+        item.setStatus(2);
         itemMapper.updateById(item);
     }
 
@@ -193,16 +182,10 @@ public class ItemService {
             throw new RuntimeException("无权操作该物品");
         }
 
-        // 删除图片
         imageMapper.deleteByItemId(itemId);
-
-        // 删除物品
         itemMapper.deleteById(itemId);
     }
 
-    /**
-     * 保存物品图片
-     */
     private void saveItemImages(Long itemId, List<MultipartFile> images) {
         String uploadDir = "./uploads/items/";
         File dir = new File(uploadDir);
@@ -217,21 +200,18 @@ public class ItemService {
             }
 
             try {
-                // 生成唯一文件名
                 String originalFilename = file.getOriginalFilename();
                 String extension = originalFilename != null ?
                         originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
                 String fileName = UUID.randomUUID() + extension;
 
-                // 保存文件
                 Path path = Paths.get(uploadDir + fileName);
                 Files.write(path, file.getBytes());
 
-                // 保存数据库记录
                 ItemImage itemImage = new ItemImage();
                 itemImage.setItemId(itemId);
                 itemImage.setImageUrl("/uploads/items/" + fileName);
-                itemImage.setIsCover(i == 0 ? 1 : 0); // 第一张作为封面
+                itemImage.setIsCover(i == 0 ? 1 : 0);
                 itemImage.setSortOrder(i);
 
                 imageMapper.insert(itemImage);

@@ -35,4 +35,9 @@ public class ItemPublishRequest {
      * 物品图片(多文件上传)
      */
     private List<MultipartFile> images;
+
+    /**
+     * 商品标签,逗号分隔(最多6个)
+     */
+    private String tags;
 }

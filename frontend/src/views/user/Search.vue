@@ -1,7 +1,8 @@
 <template>
   <div class="search-page">
+    <!-- 搜索结果 -->
     <el-card>
-      <h3>搜索结果: "{{ keyword }}"</h3>
+      <h3>搜索结果: "{{ route.query.keyword || '' }}"</h3>
       <el-row :gutter="20">
         <el-col v-for="item in itemList" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
           <el-card class="item-card" shadow="hover" @click="$router.push(`/item/${item.id}`)">
@@ -17,27 +18,31 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getItemList } from '@/api/item'
 
 const route = useRoute()
 const itemList = ref([])
-const keyword = ref(route.query.keyword || '')
 
 const loadItems = async () => {
-  if (!keyword.value) return
+  const keyword = route.query.keyword
+  if (!keyword) return
+
   try {
-    const res = await getItemList({ keyword: keyword.value, status: 1 })
+    const res = await getItemList({ keyword, status: 1 })
     itemList.value = res.data.records
   } catch (error) {
     console.error('搜索失败:', error)
   }
 }
 
-onMounted(() => {
-  loadItems()
-})
+// 监听路由 query 变化，自动重新搜索
+watch(() => route.query.keyword, (newVal) => {
+  if (newVal) {
+    loadItems()
+  }
+}, { immediate: true })
 </script>
 
 <style scoped>
