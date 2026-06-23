@@ -50,6 +50,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { getDashboardStats } from '@/api/admin'
 
 const stats = ref({
   itemCount: 0,
@@ -58,10 +59,18 @@ const stats = ref({
   commentCount: 0
 })
 
-// 简化版 - 实际应该调用API获取统计数据
+// 加载统计数据
+const loadStats = async () => {
+  try {
+    const res = await getDashboardStats()
+    stats.value = res.data
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+  }
+}
+
 onMounted(() => {
-  // 模拟数据
-  stats.value = { itemCount: 100, pendingAudit: 5, userCount: 50, commentCount: 200 }
+  loadStats()
 })
 </script>
 

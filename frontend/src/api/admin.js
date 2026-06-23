@@ -1,6 +1,16 @@
 import request from '@/utils/request'
 
 /**
+ * 获取仪表盘统计数据
+ */
+export function getDashboardStats() {
+  return request({
+    url: '/admin/dashboard',
+    method: 'get'
+  })
+}
+
+/**
  * 获取待审核物品列表
  */
 export function getAuditItemList(params) {

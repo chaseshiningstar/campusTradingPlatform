@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 二手物品实体
@@ -70,6 +71,18 @@ public class SecondHandItem {
      * 浏览次数
      */
     private Integer viewCount;
+
+    /**
+     * 封面图片URL(非数据库字段)
+     */
+    @TableField(exist = false)
+    private String coverImage;
+
+    /**
+     * 图片列表(非数据库字段)
+     */
+    @TableField(exist = false)
+    private List<String> images;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime publishTime;

@@ -50,7 +50,21 @@ public class ItemService {
                 request.getSellerId()
         );
 
-        return new PageResult<>(result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
+        // 为每个物品设置封面图
+        List<SecondHandItem> records = result.getRecords();
+        for (SecondHandItem item : records) {
+            List<ItemImage> images = imageMapper.selectByItemId(item.getId());
+            if (images != null && !images.isEmpty()) {
+                // 找到封面图
+                ItemImage cover = images.stream()
+                        .filter(img -> img.getIsCover() == 1)
+                        .findFirst()
+                        .orElse(images.get(0));
+                item.setCoverImage(cover.getImageUrl());
+            }
+        }
+
+        return new PageResult<>(records, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
     /**
@@ -65,6 +79,23 @@ public class ItemService {
         // 增加浏览次数
         item.setViewCount(item.getViewCount() + 1);
         itemMapper.updateById(item);
+
+        // 查询图片列表
+        List<ItemImage> images = imageMapper.selectByItemId(id);
+        if (images != null && !images.isEmpty()) {
+            // 设置封面图
+            ItemImage cover = images.stream()
+                    .filter(img -> img.getIsCover() == 1)
+                    .findFirst()
+                    .orElse(images.get(0));
+            item.setCoverImage(cover.getImageUrl());
+            
+            // 设置所有图片URL列表
+            List<String> imageUrls = images.stream()
+                    .map(ItemImage::getImageUrl)
+                    .collect(java.util.stream.Collectors.toList());
+            item.setImages(imageUrls);
+        }
 
         return item;
     }

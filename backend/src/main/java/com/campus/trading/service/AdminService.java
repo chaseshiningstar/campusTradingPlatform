@@ -5,11 +5,14 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.campus.trading.common.PageResult;
 import com.campus.trading.dto.AuditRequest;
+import com.campus.trading.dto.DashboardStats;
 import com.campus.trading.entity.AuditLog;
+import com.campus.trading.entity.ItemComment;
 import com.campus.trading.entity.ItemImage;
 import com.campus.trading.entity.SecondHandItem;
 import com.campus.trading.entity.SysUser;
 import com.campus.trading.mapper.AuditLogMapper;
+import com.campus.trading.mapper.ItemCommentMapper;
 import com.campus.trading.mapper.ItemImageMapper;
 import com.campus.trading.mapper.SecondHandItemMapper;
 import com.campus.trading.mapper.SysUserMapper;
@@ -32,6 +35,7 @@ public class AdminService {
     private final ItemImageMapper imageMapper;
     private final AuditLogMapper auditLogMapper;
     private final SysUserMapper userMapper;
+    private final ItemCommentMapper commentMapper;
 
     /**
      * 分页查询待审核物品
@@ -45,7 +49,21 @@ public class AdminService {
 
         IPage<SecondHandItem> result = itemMapper.selectPage(page, wrapper);
 
-        return new PageResult<>(result.getRecords(), result.getTotal(), result.getCurrent(), result.getSize());
+        // 为每个物品设置封面图
+        List<SecondHandItem> records = result.getRecords();
+        for (SecondHandItem item : records) {
+            List<ItemImage> images = imageMapper.selectByItemId(item.getId());
+            if (images != null && !images.isEmpty()) {
+                // 找到封面图
+                ItemImage cover = images.stream()
+                        .filter(img -> img.getIsCover() == 1)
+                        .findFirst()
+                        .orElse(images.get(0));
+                item.setCoverImage(cover.getImageUrl());
+            }
+        }
+
+        return new PageResult<>(records, result.getTotal(), result.getCurrent(), result.getSize());
     }
 
     /**
@@ -136,5 +154,26 @@ public class AdminService {
         auditLog.setAction(3); // 下架
         auditLog.setReason(reason);
         auditLogMapper.insert(auditLog);
+    }
+
+    /**
+     * 获取仪表盘统计数据
+     */
+    public DashboardStats getDashboardStats() {
+        // 物品总数
+        Long itemCount = itemMapper.selectCount(null);
+
+        // 待审核数量
+        LambdaQueryWrapper<SecondHandItem> pendingWrapper = new LambdaQueryWrapper<>();
+        pendingWrapper.eq(SecondHandItem::getStatus, 0);
+        Long pendingAudit = itemMapper.selectCount(pendingWrapper);
+
+        // 用户总数
+        Long userCount = userMapper.selectCount(null);
+
+        // 评论总数
+        Long commentCount = commentMapper.selectCount(null);
+
+        return new DashboardStats(itemCount, pendingAudit, userCount, commentCount);
     }
 }

@@ -6,7 +6,7 @@
       <el-table :data="auditList" style="width: 100%">
         <el-table-column label="图片" width="100">
           <template #default="{ row }">
-            <img :src="'/uploads/items/default.jpg'" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px" />
+            <img :src="row.coverImage || '/uploads/items/default.jpg'" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px" />
           </template>
         </el-table-column>
         <el-table-column prop="title" label="标题" min-width="150" />

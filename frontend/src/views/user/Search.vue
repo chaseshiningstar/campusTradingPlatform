@@ -5,7 +5,7 @@
       <el-row :gutter="20">
         <el-col v-for="item in itemList" :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
           <el-card class="item-card" shadow="hover" @click="$router.push(`/item/${item.id}`)">
-            <img :src="'/uploads/items/default.jpg'" style="width: 100%; height: 150px; object-fit: cover" />
+            <img :src="item.coverImage || '/uploads/items/default.jpg'" style="width: 100%; height: 150px; object-fit: cover" />
             <h4>{{ item.title }}</h4>
             <div class="price">¥{{ item.price }}</div>
           </el-card>

@@ -6,7 +6,7 @@
       <el-table :data="itemList" style="width: 100%">
         <el-table-column label="图片" width="100">
           <template #default="{ row }">
-            <img :src="getItemCover(row.id)" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px" />
+            <img :src="row.coverImage || '/uploads/items/default.jpg'" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px" />
           </template>
         </el-table-column>
         <el-table-column prop="title" label="标题" min-width="200" />
@@ -106,8 +106,6 @@ const getStatusText = (status) => {
   const map = { 0: '待审核', 1: '已发布', 2: '已下架', 3: '已售出', 4: '审核驳回' }
   return map[status] || '未知'
 }
-
-const getItemCover = (itemId) => '/uploads/items/default.jpg'
 
 onMounted(() => {
   loadItems()

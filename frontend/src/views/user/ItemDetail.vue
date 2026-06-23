@@ -5,7 +5,11 @@
       <el-col :md="12">
         <el-card>
           <div class="image-gallery">
-            <img :src="currentImage || '/uploads/items/default.jpg'" alt="物品图片" />
+            <el-carousel height="400px" indicator-position="outside" arrow="always">
+              <el-carousel-item v-for="(img, index) in itemImages" :key="index">
+                <img :src="img" alt="物品图片" class="carousel-image" />
+              </el-carousel-item>
+            </el-carousel>
           </div>
         </el-card>
       </el-col>
@@ -64,7 +68,7 @@
       <div class="comment-list">
         <div v-for="comment in comments" :key="comment.id" class="comment-item">
           <div class="comment-avatar">
-            <el-avatar :size="40" :src="comment.avatar" />
+            <el-avatar :size="40" :src="comment.avatar || '/uploads/avatars/default.jpg'" />
           </div>
           <div class="comment-content">
             <div class="comment-header">
@@ -102,7 +106,7 @@ const userStore = useUserStore()
 const item = ref({})
 const comments = ref([])
 const categories = ref([])
-const currentImage = ref('')
+const itemImages = ref([])
 const commentContent = ref('')
 const showContact = ref(false)
 
@@ -113,6 +117,13 @@ const loadItemDetail = async () => {
   try {
     const res = await getItemDetail(route.params.id)
     item.value = res.data
+    
+    // 设置物品图片
+    if (res.data.images && res.data.images.length > 0) {
+      itemImages.value = res.data.images
+    } else {
+      itemImages.value = ['/uploads/items/default.jpg']
+    }
   } catch (error) {
     console.error('加载物品详情失败:', error)
   }
@@ -195,16 +206,19 @@ onMounted(() => {
 .image-gallery {
   width: 100%;
   height: 400px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background: #f5f7fa;
+  overflow: hidden;
 }
 
-.image-gallery img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+.image-gallery :deep(.el-carousel__container) {
+  height: 400px;
+}
+
+.carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .price {

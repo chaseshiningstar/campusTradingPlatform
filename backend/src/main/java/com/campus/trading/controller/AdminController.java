@@ -3,6 +3,7 @@ package com.campus.trading.controller;
 import com.campus.trading.common.PageResult;
 import com.campus.trading.common.Result;
 import com.campus.trading.dto.AuditRequest;
+import com.campus.trading.dto.DashboardStats;
 import com.campus.trading.entity.SecondHandItem;
 import com.campus.trading.entity.SysUser;
 import com.campus.trading.interceptor.JwtInterceptor;
@@ -24,6 +25,17 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+
+    @Operation(summary = "获取仪表盘统计数据")
+    @GetMapping("/dashboard")
+    public Result<DashboardStats> getDashboardStats() {
+        try {
+            DashboardStats stats = adminService.getDashboardStats();
+            return Result.success(stats);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
 
     @Operation(summary = "获取待审核物品列表")
     @GetMapping("/item/audit-list")

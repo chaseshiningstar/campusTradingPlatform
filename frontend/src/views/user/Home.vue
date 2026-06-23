@@ -30,7 +30,7 @@
         >
           <el-card class="item-card" shadow="hover" @click="goToDetail(item.id)">
             <div class="item-image">
-              <img :src="getItemCover(item.id)" alt="物品图片" />
+              <img :src="item.coverImage || '/uploads/items/default.jpg'" alt="物品图片" />
             </div>
             <div class="item-info">
               <h4 class="item-title">{{ item.title }}</h4>
@@ -128,12 +128,6 @@ const getCategoryName = (categoryId) => {
 // 跳转到详情页
 const goToDetail = (itemId) => {
   router.push(`/item/${itemId}`)
-}
-
-// 获取物品封面图
-const getItemCover = (itemId) => {
-  // 这里简化处理,实际应该从物品数据中获取封面
-  return '/uploads/items/default.jpg'
 }
 
 // 格式化时间
