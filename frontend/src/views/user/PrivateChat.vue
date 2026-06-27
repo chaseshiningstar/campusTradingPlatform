@@ -207,13 +207,20 @@ onUnmounted(() => {
 .chat-page {
   max-width: 800px;
   margin: 0 auto;
+  height: calc(100vh - 140px);
+  min-height: 500px;
 }
 
+/* 强制 el-card 作为 flex 容器 */
 .chat-card {
+  height: 100%;
+}
+
+.chat-card :deep(.el-card__body) {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 160px);
-  min-height: 500px;
+  height: 100%;
+  padding: 0;
 }
 
 .chat-header {
@@ -223,6 +230,7 @@ onUnmounted(() => {
   padding: 12px 16px;
   border-bottom: 1px solid #ebeef5;
   background: #fafafa;
+  flex-shrink: 0; /* 固定高度不参与伸缩 */
 }
 
 .other-info {
@@ -251,11 +259,13 @@ onUnmounted(() => {
   margin-right: 4px;
 }
 
+/* 消息列表占据剩余空间,可滚动 */
 .message-list {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
   background: #f5f7fa;
+  min-height: 0; /* 关键:让 flex 子元素能正确收缩 */
 }
 
 .empty-chat {
@@ -309,13 +319,14 @@ onUnmounted(() => {
   padding: 0 4px;
 }
 
+/* 输入区固定在底部 */
 .input-area {
   display: flex;
   gap: 8px;
   padding: 12px 16px;
   border-top: 1px solid #ebeef5;
   background: #fff;
-  align-items: flex-end;
+  flex-shrink: 0; /* 固定高度不参与伸缩 */
 }
 
 .input-area :deep(.el-textarea) {

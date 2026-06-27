@@ -60,12 +60,17 @@ const handleLogin = async () => {
 
     await userStore.login(loginForm)
     ElMessage.success('登录成功')
-    router.push('/')
+
+    // 使用 await 等待导航完成,并捕获导航失败
+    await router.push('/')
   } catch (error) {
     console.error('登录失败:', error)
-  } finally {
+    // 登录或导航失败时,重置 loading 状态
     loading.value = false
+    return
   }
+  // 登录成功并跳转后才重置 loading
+  loading.value = false
 }
 </script>
 

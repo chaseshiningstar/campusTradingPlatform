@@ -167,10 +167,16 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('token', newToken)
     localStorage.setItem('userInfo', JSON.stringify(info))
 
-    // 建立WebSocket连接
-    connectWebSocket()
-    // 通知其他标签页
-    broadcastAuthChange('login')
+    // 建立WebSocket连接与广播放到微任务中执行,避免阻塞登录主流程
+    // 这样即使 WebSocket 连接出错,也不会影响路由跳转
+    Promise.resolve().then(() => {
+      try {
+        connectWebSocket()
+        broadcastAuthChange('login')
+      } catch (e) {
+        console.warn('登录后初始化WebSocket失败(不影响登录):', e)
+      }
+    })
 
     return res
   }
