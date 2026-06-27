@@ -62,4 +62,10 @@ public class ItemComment {
 
     @TableField(exist = false)
     private String avatar;
+
+    @TableField(exist = false)
+    private String itemTitle;
+
+    @TableField(exist = false)
+    private String parentContent;
 }

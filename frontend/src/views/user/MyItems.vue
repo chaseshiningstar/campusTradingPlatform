@@ -21,11 +21,14 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" min-width="300" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="$router.push(`/item/${row.id}`)">查看</el-button>
-            <el-button size="small" type="warning" @click="handleOffline(row)" v-if="row.status === 1">下架</el-button>
-            <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+            <div class="action-btns">
+              <el-button size="small" @click="$router.push(`/item/${row.id}`)">查看</el-button>
+              <el-button size="small" type="warning" @click="handleOffline(row)" v-if="row.status === 1">下架</el-button>
+              <el-button size="small" type="success" @click="handleMarkSold(row)" v-if="row.status === 1">标为已售出</el-button>
+              <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -45,7 +48,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getMyItems, offlineItem, deleteItem } from '@/api/item'
+import { getMyItems, offlineItem, deleteItem, markAsSold } from '@/api/item'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const itemList = ref([])
@@ -77,6 +80,20 @@ const handleOffline = async (item) => {
   } catch (error) {
     if (error !== 'cancel') {
       console.error('下架失败:', error)
+    }
+  }
+}
+
+// 标记为已售出
+const handleMarkSold = async (item) => {
+  try {
+    await ElMessageBox.confirm('确定将该物品标记为已售出吗?', '提示', { type: 'success' })
+    await markAsSold(item.id)
+    ElMessage.success('已标记为售出')
+    loadItems()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('操作失败:', error)
     }
   }
 }
@@ -116,5 +133,12 @@ onMounted(() => {
 .my-items-page h2 {
   margin-bottom: 20px;
   color: #303133;
+}
+
+.action-btns {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  align-items: center;
 }
 </style>

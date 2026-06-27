@@ -63,7 +63,7 @@
           />
         </el-form-item>
 
-        <el-form-item label="物品图片">
+        <el-form-item label="物品图片" required>
           <div style="display: flex; align-items: flex-start; gap: 12px;">
             <el-upload
               action="#"
@@ -92,7 +92,7 @@
           </div>
         </el-form-item>
 
-        <el-form-item label="商品标签">
+        <el-form-item label="商品标签" required>
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <el-tag
               v-for="(tag, index) in form.tags"
@@ -114,7 +114,7 @@
               AI 生成标签
             </el-button>
             <span style="font-size: 12px; color: #909399;">
-              ({{ form.tags.length }}/6 点击生成或手动添加)
+              ({{ form.tags.length }}/6 点击生成)
             </span>
           </div>
         </el-form-item>
@@ -164,7 +164,8 @@ const rules = {
   title: [{ required: true, message: '请输入物品标题', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
   price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
-  contactInfo: [{ required: true, message: '请填写联系方式', trigger: 'blur' }]
+  contactInfo: [{ required: true, message: '请填写联系方式', trigger: 'blur' }],
+  description: [{ required: true, message: '请输入物品描述', trigger: 'blur' }]
 }
 
 const sizePlaceholder = computed(() => {
@@ -217,11 +218,11 @@ const handleGenerateTags = async () => {
       form.tags = res.data.slice(0, 6)
       ElMessage.success(`已生成 ${form.tags.length} 个标签，可删除不合适的`)
     } else {
-      ElMessage.warning('未能生成标签，请手动添加')
+      ElMessage.warning('未能生成标签，请完善您的物品描述')
     }
   } catch (error) {
     console.error('标签生成失败:', error)
-    ElMessage.error('标签生成失败，将使用本地提取')
+    ElMessage.error('标签生成失败')
   } finally {
     generating.value = false
   }

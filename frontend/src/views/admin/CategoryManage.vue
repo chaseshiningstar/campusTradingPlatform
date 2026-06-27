@@ -4,30 +4,12 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h3 style="margin: 0;">分类管理</h3>
         <el-button type="primary" @click="handleAdd()">
-          <el-icon><Plus /></el-icon> 新增分类
+          <el-icon><Plus /></el-icon> 新增大类
         </el-button>
       </div>
 
-      <el-table
-        :data="flatList"
-        v-loading="loading"
-        row-key="id"
-        border
-        stripe
-        default-expand-all
-      >
-        <el-table-column prop="categoryName" label="分类名称" min-width="180">
-          <template #default="{ row }">
-            <span :style="{ paddingLeft: (row._level * 24) + 'px' }">
-              {{ row._level > 0 ? '└ ' : '' }}{{ row.categoryName }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="parentId" label="父级分类" width="120" align="center">
-          <template #default="{ row }">
-            {{ row.parentId === 0 ? '-' : getParentName(row.parentId) }}
-          </template>
-        </el-table-column>
+      <el-table :data="categoryList" v-loading="loading" border stripe>
+        <el-table-column prop="categoryName" label="分类名称" min-width="180" />
         <el-table-column prop="icon" label="图标" width="100" align="center" />
         <el-table-column prop="sortOrder" label="排序" width="70" align="center" />
         <el-table-column prop="status" label="状态" width="90" align="center">
@@ -60,23 +42,13 @@
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑分类' : '新增分类'"
+      :title="isEdit ? '编辑分类' : '新增大类'"
       width="500px"
       @close="resetForm"
     >
       <el-form :model="form" ref="formRef" label-width="80px">
         <el-form-item label="分类名称" required>
           <el-input v-model="form.categoryName" placeholder="请输入分类名称" maxlength="50" />
-        </el-form-item>
-        <el-form-item label="父级分类">
-          <el-select v-model="form.parentId" placeholder="无(作为一级分类)" style="width: 100%" clearable>
-            <el-option
-              v-for="p in parentOptions"
-              :key="p.id"
-              :label="p.categoryName"
-              :value="p.id"
-            />
-          </el-select>
         </el-form-item>
         <el-form-item label="图标">
           <el-input v-model="form.icon" placeholder="图标标识(英文)" maxlength="50" />
@@ -96,7 +68,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import {
-  getCategoryTree,
+  getAllCategories,
   addCategory,
   updateCategory,
   deleteCategory,
@@ -110,45 +82,21 @@ const submitting = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref(null)
-const treeData = ref([])
-const flatList = ref([])
+const categoryList = ref([])
 
 const form = reactive({
   id: null,
   categoryName: '',
-  parentId: null,
   icon: '',
   sortOrder: 0
 })
 
-const parentOptions = ref([])
-
-/** 将树形数据扁平化并标记层级 */
-function flattenTree(tree, level = 0) {
-  const result = []
-  for (const node of tree) {
-    result.push({ ...node, _level: level, children: undefined })
-    if (node.children && node.children.length > 0) {
-      result.push(...flattenTree(node.children, level + 1))
-    }
-  }
-  return result
-}
-
-function getParentName(parentId) {
-  const all = flatList.value
-  const p = all.find(item => item.id === parentId)
-  return p ? p.categoryName : '-'
-}
-
 async function loadData() {
   loading.value = true
   try {
-    const res = await getCategoryTree()
-    treeData.value = res.data || []
-    flatList.value = flattenTree(treeData.value)
-    // 一级分类可作为父级选项
-    parentOptions.value = flatList.value.filter(item => item._level === 0)
+    const res = await getAllCategories()
+    // 只显示顶层大类
+    categoryList.value = (res.data || []).filter(c => c.parentId === 0)
   } catch (error) {
     console.error('加载分类失败:', error)
   } finally {
@@ -160,7 +108,6 @@ function handleAdd() {
   isEdit.value = false
   form.id = null
   form.categoryName = ''
-  form.parentId = null
   form.icon = ''
   form.sortOrder = 0
   dialogVisible.value = true
@@ -170,7 +117,6 @@ function handleEdit(row) {
   isEdit.value = true
   form.id = row.id
   form.categoryName = row.categoryName
-  form.parentId = row.parentId === 0 ? null : row.parentId
   form.icon = row.icon || ''
   form.sortOrder = row.sortOrder || 0
   dialogVisible.value = true
@@ -191,7 +137,7 @@ async function handleSubmit() {
     const data = {
       id: form.id,
       categoryName: form.categoryName.trim(),
-      parentId: form.parentId || 0,
+      parentId: 0,
       icon: form.icon || null,
       sortOrder: form.sortOrder || 0
     }
@@ -231,7 +177,7 @@ function handleToggle(row) {
 
 function handleDelete(row) {
   ElMessageBox.confirm(
-    `确定删除「${row.categoryName}」？如有子分类需先删除。`,
+    `确定删除「${row.categoryName}」？`,
     '删除确认',
     { type: 'warning', confirmButtonText: '删除', confirmButtonClass: 'el-button--danger' }
   ).then(async () => {
@@ -254,20 +200,4 @@ onMounted(() => {
 .category-manage-page h3 {
   color: #303133;
 }
-</style>
-<template>
-  <div class="category-manage-page">
-    <el-card>
-      <h3>分类管理</h3>
-      <el-empty description="暂无数据" />
-    </el-card>
-  </div>
-</template>
-
-<script setup>
-// 分类管理页面 - 简化版
-</script>
-
-<style scoped>
-.category-manage-page h3 { margin-bottom: 20px; color: #303133; }
 </style>

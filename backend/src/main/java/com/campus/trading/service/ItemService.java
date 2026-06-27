@@ -45,7 +45,9 @@ public class ItemService {
                 request.getKeyword(),
                 request.getCategoryId(),
                 request.getStatus(),
-                request.getSellerId()
+                request.getSellerId(),
+                request.getMinPrice(),
+                request.getMaxPrice()
         );
 
         List<SecondHandItem> records = result.getRecords();
@@ -170,6 +172,23 @@ public class ItemService {
         }
 
         item.setStatus(2);
+        itemMapper.updateById(item);
+    }
+
+    /**
+     * 标记物品为已售出
+     */
+    public void markAsSold(Long itemId, Long userId) {
+        SecondHandItem item = itemMapper.selectById(itemId);
+        if (item == null) {
+            throw new RuntimeException("物品不存在");
+        }
+
+        if (!item.getSellerId().equals(userId)) {
+            throw new RuntimeException("无权操作该物品");
+        }
+
+        item.setStatus(3);
         itemMapper.updateById(item);
     }
 

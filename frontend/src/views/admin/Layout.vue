@@ -37,10 +37,7 @@
             <el-icon><Menu /></el-icon>
             <span>分类管理</span>
           </el-menu-item>
-          <el-menu-item index="/admin/settings">
-            <el-icon><Setting /></el-icon>
-            <span>系统设置</span>
-          </el-menu-item>
+
         </el-menu>
       </el-aside>
 

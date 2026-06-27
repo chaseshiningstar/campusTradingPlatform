@@ -138,6 +138,16 @@ export function offlineItem(id) {
 }
 
 /**
+ * 标记物品为已售出
+ */
+export function markAsSold(id) {
+  return request({
+    url: `/item/sold/${id}`,
+    method: 'put'
+  })
+}
+
+/**
  * 删除物品
  */
 export function deleteItem(id) {

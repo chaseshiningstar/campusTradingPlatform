@@ -2,6 +2,8 @@ package com.campus.trading.dto;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 /**
  * 物品查询请求DTO
  */
@@ -37,4 +39,14 @@ public class ItemQueryRequest {
      * 卖家ID
      */
     private Long sellerId;
+
+    /**
+     * 最低价格
+     */
+    private BigDecimal minPrice;
+
+    /**
+     * 最高价格
+     */
+    private BigDecimal maxPrice;
 }

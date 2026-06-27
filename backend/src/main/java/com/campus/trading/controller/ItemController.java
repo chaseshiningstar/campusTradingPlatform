@@ -99,6 +99,18 @@ public class ItemController {
         }
     }
 
+    @Operation(summary = "标记物品为已售出")
+    @PutMapping("/sold/{id}")
+    public Result<Void> markAsSold(@PathVariable Long id, HttpServletRequest httpRequest) {
+        try {
+            Long userId = (Long) httpRequest.getAttribute(JwtInterceptor.USER_ID_KEY);
+            itemService.markAsSold(id, userId);
+            return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
     @Operation(summary = "删除物品")
     @DeleteMapping("/delete/{id}")
     public Result<Void> deleteItem(@PathVariable Long id, HttpServletRequest httpRequest) {

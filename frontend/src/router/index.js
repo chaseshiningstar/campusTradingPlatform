@@ -117,12 +117,7 @@ const routes = [
         component: () => import('@/views/admin/CategoryManage.vue'),
         meta: { title: '分类管理' }
       },
-      {
-        path: 'settings',
-        name: 'Settings',
-        component: () => import('@/views/admin/Settings.vue'),
-        meta: { title: '系统设置' }
-      }
+
     ]
   }
 ]

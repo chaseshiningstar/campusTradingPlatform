@@ -8,12 +8,15 @@ import com.campus.trading.entity.SecondHandItem;
 import com.campus.trading.entity.SysUser;
 import com.campus.trading.interceptor.JwtInterceptor;
 import com.campus.trading.service.AdminService;
+import com.campus.trading.service.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 /**
  * 管理员控制器
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final CommentService commentService;
 
     @Operation(summary = "获取仪表盘统计数据")
     @GetMapping("/dashboard")
@@ -96,6 +100,21 @@ public class AdminController {
             Long auditorId = (Long) httpRequest.getAttribute(JwtInterceptor.USER_ID_KEY);
             adminService.adminOfflineItem(id, auditorId, reason);
             return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "管理员分页查询所有留言(支持时间筛选)")
+    @GetMapping("/comments")
+    public Result<PageResult<Map<String, Object>>> getCommentList(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "10") Long size,
+            @RequestParam(required = false) String startTime,
+            @RequestParam(required = false) String endTime) {
+        try {
+            PageResult<Map<String, Object>> result = commentService.getAllComments(current, size, startTime, endTime);
+            return Result.success(result);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

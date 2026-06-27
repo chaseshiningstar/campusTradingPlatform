@@ -48,6 +48,18 @@ public class CommentController {
         }
     }
 
+    @Operation(summary = "获取卖家收到的所有留言")
+    @GetMapping("/my-messages")
+    public Result<List<Map<String, Object>>> getMyMessages(HttpServletRequest httpRequest) {
+        try {
+            Long userId = (Long) httpRequest.getAttribute(JwtInterceptor.USER_ID_KEY);
+            List<Map<String, Object>> messages = commentService.getMyMessages(userId);
+            return Result.success(messages);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
     @Operation(summary = "删除评论")
     @DeleteMapping("/delete/{id}")
     public Result<Void> deleteComment(@PathVariable Long id, HttpServletRequest httpRequest) {

@@ -41,6 +41,9 @@ public class TagService {
      * 根据商品标题和描述生成6个搜索标签
      */
     public List<String> generateTags(String title, String description) {
+        // 前置校验: 描述质量
+        validateDescription(title, description);
+
         if (apiUrl == null || apiUrl.isBlank()) {
             log.warn("LLM API未配置,使用默认标签提取");
             return extractTagsLocally(title, description);
@@ -81,9 +84,24 @@ public class TagService {
                 String content = root.path("choices").get(0)
                         .path("message").path("content").asText();
 
-                return parseTags(content.trim());
+                // 检测AI返回的错误标记
+                if (content != null && content.contains("[ERROR_DESC]")) {
+                    throw new RuntimeException("物品描述过于简单或内容混乱，请提供更详细的描述信息（如品牌型号、使用情况、成色等）。推荐使用AI辅助描述");
+                }
+
+                List<String> tags = parseTags(content.trim());
+
+                // 后置校验: 生成标签数不足,视为描述质量差
+                if (tags.size() < 3) {
+                    throw new RuntimeException("物品描述信息不足，仅生成了" + tags.size() + "个标签。请补充详细的描述信息（品牌型号、使用情况、成色等）");
+                }
+
+                return tags;
             }
 
+        } catch (RuntimeException e) {
+            // 业务异常(如描述校验失败)直接向上抛出,不降级
+            throw e;
         } catch (Exception e) {
             log.error("调用大模型API失败,降级为本地提取: {}", e.getMessage());
         }
@@ -99,10 +117,11 @@ public class TagService {
         return String.format(
                 "根据以下商品信息生成6个精准的搜索标签。\n" +
                 "要求：\n" +
-                "1. 标签用中文,每个标签2-6个字\n" +
+                "1. 标签用中文,每个标签2-6个字。不允许自己发挥，只能根据物品描述来。如果有准确的商品款式，可以联网搜索\n" +
                 "2. 涵盖品类、品牌、成色、核心卖点\n" +
                 "3. 6个标签用逗号分隔,不要编号\n" +
-                "4. 只输出标签,不要任何解释\n\n" +
+                "4. 只输出标签,不要任何解释\n" +
+                "5. 如果商品描述过于简单(只有几个字)或内容混乱、无法判断商品属性,请直接输出 [ERROR_DESC]\n\n" +
                 "商品标题：%s\n" +
                 "商品描述：%s\n\n" +
                 "标签：", title, description);
@@ -134,6 +153,37 @@ public class TagService {
         }
 
         return new ArrayList<>(seen);
+    }
+
+    /**
+     * 前置校验描述质量: 拒绝过于简单、混乱或无效的描述
+     */
+    private void validateDescription(String title, String description) {
+        String desc = description != null ? description.trim() : "";
+        String tit = title != null ? title.trim() : "";
+
+        // 1. 描述为空或过短
+        if (desc.length() < 6) {
+            throw new RuntimeException("物品描述过于简单（少于6个字），请提供更详细的描述信息（如品牌型号、使用情况、成色等）");
+        }
+
+        // 2. 描述中有效中文字符太少
+        long chineseCount = desc.codePoints().filter(c -> Character.UnicodeScript.of(c) == Character.UnicodeScript.HAN).count();
+        if (chineseCount < 4) {
+            throw new RuntimeException("物品描述中有效信息不足，请用中文详细描述商品（品牌型号、使用情况、成色等）");
+        }
+
+        // 3. 标题+描述合并后信息量不足
+        if (desc.length() < 15 && tit.length() < 5) {
+            throw new RuntimeException("物品标题和描述信息量不足，请补充详细的商品信息");
+        }
+
+        // 4. 描述全是重复字符/无意义内容
+        Set<Integer> uniqueChars = new HashSet<>();
+        desc.codePoints().forEach(uniqueChars::add);
+        if (uniqueChars.size() < 4) {
+            throw new RuntimeException("物品描述内容混乱，请提供有意义的商品描述信息");
+        }
     }
 
     /**

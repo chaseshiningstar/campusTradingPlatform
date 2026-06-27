@@ -43,7 +43,7 @@
 
     <!-- 底部 -->
     <el-footer class="footer">
-      <p>&copy; 2024 校园二手交易平台 - 让闲置流动起来</p>
+      <p>&copy; 2026 校园二手交易平台 - 让闲置流动起来</p>
     </el-footer>
   </div>
 </template>

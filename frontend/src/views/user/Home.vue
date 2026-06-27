@@ -4,6 +4,13 @@
     <el-card class="category-card">
       <div class="category-list">
         <el-tag
+          :type="activeCategory === null ? 'primary' : 'info'"
+          class="category-tag"
+          @click="selectCategory(null)"
+        >
+          全部
+        </el-tag>
+        <el-tag
           v-for="cat in categories"
           :key="cat.id"
           :type="activeCategory === cat.id ? 'primary' : 'info'"
@@ -114,7 +121,11 @@ const loadItems = async () => {
 
 // 选择分类
 const selectCategory = (categoryId) => {
-  activeCategory.value = activeCategory.value === categoryId ? null : categoryId
+  if (categoryId === null) {
+    activeCategory.value = null
+  } else {
+    activeCategory.value = activeCategory.value === categoryId ? null : categoryId
+  }
   currentPage.value = 1
   loadItems()
 }

@@ -8,6 +8,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.math.BigDecimal;
+
 /**
  * 二手物品Mapper
  */
@@ -15,7 +17,7 @@ import org.apache.ibatis.annotations.Select;
 public interface SecondHandItemMapper extends BaseMapper<SecondHandItem> {
 
     /**
-     * 分页查询物品(支持关键词和分类搜索,按标签+标题+分类名匹配并排序)
+     * 分页查询物品(支持关键词、分类、价格范围搜索,按标签+标题+分类名匹配并排序)
      */
     @Select("<script>" +
             "SELECT i.*, " +
@@ -45,6 +47,12 @@ public interface SecondHandItemMapper extends BaseMapper<SecondHandItem> {
             "<if test='sellerId != null'>" +
             "AND i.seller_id = #{sellerId} " +
             "</if>" +
+            "<if test='minPrice != null'>" +
+            "AND i.price &gt;= #{minPrice} " +
+            "</if>" +
+            "<if test='maxPrice != null'>" +
+            "AND i.price &lt;= #{maxPrice} " +
+            "</if>" +
             "<if test='keyword != null and keyword != \"\"'>" +
             "ORDER BY relevance DESC, i.publish_time DESC" +
             "</if>" +
@@ -56,5 +64,7 @@ public interface SecondHandItemMapper extends BaseMapper<SecondHandItem> {
                                                     @Param("keyword") String keyword,
                                                     @Param("categoryId") Long categoryId,
                                                     @Param("status") Integer status,
-                                                    @Param("sellerId") Long sellerId);
+                                                    @Param("sellerId") Long sellerId,
+                                                    @Param("minPrice") BigDecimal minPrice,
+                                                    @Param("maxPrice") BigDecimal maxPrice);
 }

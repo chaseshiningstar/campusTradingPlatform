@@ -30,3 +30,24 @@ export function deleteComment(id) {
     method: 'delete'
   })
 }
+
+/**
+ * 获取卖家收到的所有留言
+ */
+export function getMyMessages() {
+  return request({
+    url: '/comment/my-messages',
+    method: 'get'
+  })
+}
+
+/**
+ * 管理员分页查询所有留言(支持时间筛选)
+ */
+export function getAdminComments(params) {
+  return request({
+    url: '/admin/comments',
+    method: 'get',
+    params
+  })
+}
