@@ -19,7 +19,10 @@
         </el-form-item>
 
         <el-form-item label="价格" prop="price">
-          <el-input-number v-model="form.price" :min="0" :precision="2" :step="1" style="width: 200px" />
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <el-input-number v-model="form.price" :min="0" :precision="2" :step="1" style="width: 200px" />
+            <el-tag v-if="priceEstimated" type="warning" size="small">AI 预估</el-tag>
+          </div>
         </el-form-item>
 
         <el-form-item label="原价">
@@ -36,6 +39,15 @@
           </el-select>
         </el-form-item>
 
+        <el-form-item label="尺码/尺寸" :required="form.categoryId === 4">
+          <el-input
+            v-model="form.size"
+            :placeholder="sizePlaceholder"
+            maxlength="30"
+            style="width: 300px"
+          />
+        </el-form-item>
+
         <el-form-item label="联系方式">
           <el-input v-model="form.contactInfo" placeholder="手机号、微信等" />
         </el-form-item>
@@ -49,6 +61,35 @@
             maxlength="500"
             show-word-limit
           />
+        </el-form-item>
+
+        <el-form-item label="物品图片">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <el-upload
+              action="#"
+              list-type="picture-card"
+              :auto-upload="false"
+              :on-change="handleImageChange"
+              :file-list="fileList"
+              multiple
+              accept="image/*"
+            >
+              <el-icon><Plus /></el-icon>
+            </el-upload>
+            <div>
+              <div class="upload-tip">最多上传9张图片，第一张为封面</div>
+              <el-button
+                type="warning" size="small" plain
+                @click="handleImageRecognize"
+                :loading="recognizing"
+                :disabled="form.images.length === 0"
+                style="margin-top: 8px;"
+              >
+                <el-icon><Camera /></el-icon>
+                AI 识图生成信息
+              </el-button>
+            </div>
+          </div>
         </el-form-item>
 
         <el-form-item label="商品标签">
@@ -78,21 +119,6 @@
           </div>
         </el-form-item>
 
-        <el-form-item label="物品图片">
-          <el-upload
-            action="#"
-            list-type="picture-card"
-            :auto-upload="false"
-            :on-change="handleImageChange"
-            :file-list="fileList"
-            multiple
-            accept="image/*"
-          >
-            <el-icon><Plus /></el-icon>
-          </el-upload>
-          <div class="upload-tip">最多上传9张图片，第一张为封面</div>
-        </el-form-item>
-
         <el-form-item>
           <el-button type="primary" @click="handleSubmit" :loading="loading">
             发布物品
@@ -105,17 +131,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { publishItem, generateTags } from '@/api/item'
+import { publishItem, generateTags, generateFromImage } from '@/api/item'
 import { getAllCategories } from '@/api/category'
 import { ElMessage } from 'element-plus'
-import { Plus, MagicStick } from '@element-plus/icons-vue'
+import { Plus, MagicStick, Camera } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
 const generating = ref(false)
+const recognizing = ref(false)
+const priceEstimated = ref(false)
 const categories = ref([])
 const fileList = ref([])
 
@@ -125,6 +153,7 @@ const form = reactive({
   price: 0,
   originalPrice: null,
   conditionLevel: 2,
+  size: '',
   contactInfo: '',
   description: '',
   tags: [],
@@ -136,6 +165,18 @@ const rules = {
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
   price: [{ required: true, message: '请输入价格', trigger: 'blur' }]
 }
+
+const sizePlaceholder = computed(() => {
+  const map = {
+    1: '可选填尺寸，如 15.6英寸 / 6.1英寸',
+    2: '可选填尺寸，如 A4 / 16开',
+    3: '可选填尺寸，如 40×30×20cm',
+    4: '请输入码数，如 M / L / XL / 38码 / 170/88A',
+    5: '可选填尺寸/规格，如 5*5m / 5kg',
+    6: '可选填尺寸'
+  }
+  return map[form.categoryId] || '可选填尺寸'
+})
 
 const loadCategories = async () => {
   try {
@@ -185,6 +226,52 @@ const handleGenerateTags = async () => {
   }
 }
 
+const fileToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+const handleImageRecognize = async () => {
+  if (form.images.length === 0) {
+    ElMessage.warning('请先上传商品图片')
+    return
+  }
+
+  recognizing.value = true
+  priceEstimated.value = false
+  try {
+    // 转换图片为base64
+    const base64Images = await Promise.all(
+      form.images.slice(0, 3).map(f => fileToBase64(f))
+    )
+
+    const res = await generateFromImage({ images: base64Images })
+    if (res.data) {
+      const { title, description, price, priceEstimated: estimated } = res.data
+
+      if (title) form.title = title
+      if (description) form.description = description
+      if (price !== undefined && price !== null && price > 0) {
+        form.price = price
+        priceEstimated.value = estimated || true
+      }
+
+      ElMessage.success('AI 已识别图片信息，请核对修改后发布')
+    } else {
+      ElMessage.warning('AI 未能识别图片内容，请手动填写')
+    }
+  } catch (error) {
+    console.error('图片识别失败:', error)
+    ElMessage.error('图片识别失败，请手动填写信息')
+  } finally {
+    recognizing.value = false
+  }
+}
+
 const handleSubmit = async () => {
   try {
     await formRef.value.validate()
@@ -196,6 +283,12 @@ const handleSubmit = async () => {
 
     if (form.tags.length === 0) {
       ElMessage.warning('请生成或手动输入商品标签')
+      return
+    }
+
+    // 服装类必须填尺码
+    if (form.categoryId === 4 && !form.size) {
+      ElMessage.warning('服装鞋帽类请填写码数/尺码')
       return
     }
 

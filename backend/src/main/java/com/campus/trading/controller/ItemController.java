@@ -7,7 +7,10 @@ import com.campus.trading.dto.ItemQueryRequest;
 import com.campus.trading.dto.TagGenerationRequest;
 import com.campus.trading.entity.SecondHandItem;
 import com.campus.trading.interceptor.JwtInterceptor;
+import com.campus.trading.dto.ImageToItemResponse;
+import com.campus.trading.service.ImageToItemService;
 import com.campus.trading.service.ItemService;
+import com.campus.trading.service.RateLimiterService;
 import com.campus.trading.service.TagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 物品控制器
@@ -29,6 +33,8 @@ public class ItemController {
 
     private final ItemService itemService;
     private final TagService tagService;
+    private final ImageToItemService imageToItemService;
+    private final RateLimiterService rateLimiterService;
 
     @Operation(summary = "获取物品列表(分页)")
     @GetMapping("/list")
@@ -120,10 +126,46 @@ public class ItemController {
 
     @Operation(summary = "AI生成商品标签")
     @PostMapping("/generate-tags")
-    public Result<List<String>> generateTags(@Valid @RequestBody TagGenerationRequest request) {
+    public Result<List<String>> generateTags(@Valid @RequestBody TagGenerationRequest request,
+                                              HttpServletRequest httpRequest) {
+        Long userId = (Long) httpRequest.getAttribute(JwtInterceptor.USER_ID_KEY);
+        String limitKey = "tags:" + userId;
+
+        // 频率限制: 每分钟最多10次
+        if (!rateLimiterService.tryAcquire(limitKey, 10, 60)) {
+            return Result.error(429, "操作太频繁,请稍后再试 (每分钟最多10次)");
+        }
+
         try {
             List<String> tags = tagService.generateTags(request.getTitle(), request.getDescription());
             return Result.success(tags);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "AI识别图片生成商品信息")
+    @PostMapping("/generate-from-image")
+    public Result<ImageToItemResponse> generateFromImage(@RequestBody Map<String, List<String>> body,
+                                                          HttpServletRequest httpRequest) {
+        Long userId = (Long) httpRequest.getAttribute(JwtInterceptor.USER_ID_KEY);
+        String limitKey = "img2item:" + userId;
+
+        // 频率限制: 每分钟最多5次 (图片识别token消耗更大)
+        if (!rateLimiterService.tryAcquire(limitKey, 5, 60)) {
+            return Result.error(429, "操作太频繁,请稍后再试 (每分钟最多5次)");
+        }
+
+        try {
+            List<String> images = body.get("images");
+            if (images == null || images.isEmpty()) {
+                return Result.error("请至少上传一张图片");
+            }
+            ImageToItemResponse response = imageToItemService.generateFromImage(images);
+            if (response == null) {
+                return Result.error("图片识别失败,请重试");
+            }
+            return Result.success(response);
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

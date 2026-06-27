@@ -28,7 +28,20 @@ export function generateTags(data) {
   return request({
     url: '/item/generate-tags',
     method: 'post',
-    data
+    data,
+    timeout: 60000 // 大模型API响应较慢,单独给60秒
+  })
+}
+
+/**
+ * AI识别图片生成商品信息(标题+描述+价格)
+ */
+export function generateFromImage(data) {
+  return request({
+    url: '/item/generate-from-image',
+    method: 'post',
+    data,
+    timeout: 90000 // 图片识别耗时更长,给90秒
   })
 }
 
@@ -46,6 +59,9 @@ export function publishItem(data) {
   }
   if (data.conditionLevel) {
     formData.append('conditionLevel', data.conditionLevel)
+  }
+  if (data.size) {
+    formData.append('size', data.size)
   }
   if (data.contactInfo) {
     formData.append('contactInfo', data.contactInfo)
@@ -84,6 +100,9 @@ export function updateItem(id, data) {
   }
   if (data.conditionLevel) {
     formData.append('conditionLevel', data.conditionLevel)
+  }
+  if (data.size) {
+    formData.append('size', data.size)
   }
   if (data.contactInfo) {
     formData.append('contactInfo', data.contactInfo)

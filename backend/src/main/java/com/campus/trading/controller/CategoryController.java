@@ -6,16 +6,11 @@ import com.campus.trading.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
-/**
- * 分类控制器
- */
 @Tag(name = "分类管理", description = "物品分类接口")
 @RestController
 @RequestMapping("/category")
@@ -27,20 +22,59 @@ public class CategoryController {
     @Operation(summary = "获取所有分类")
     @GetMapping("/list")
     public Result<List<ItemCategory>> getAllCategories() {
-        try {
-            List<ItemCategory> categories = categoryService.getAllCategories();
-            return Result.success(categories);
-        } catch (Exception e) {
-            return Result.error(e.getMessage());
-        }
+        return Result.success(categoryService.getAllCategories());
+    }
+
+    @Operation(summary = "获取分类树(管理端)")
+    @GetMapping("/tree")
+    public Result<List<Map<String, Object>>> getCategoryTree() {
+        return Result.success(categoryService.getCategoryTree());
     }
 
     @Operation(summary = "获取子分类")
     @GetMapping("/children")
     public Result<List<ItemCategory>> getChildren(@RequestParam Long parentId) {
+        return Result.success(categoryService.getCategoriesByParentId(parentId));
+    }
+
+    @Operation(summary = "新增分类")
+    @PostMapping("/add")
+    public Result<ItemCategory> addCategory(@RequestBody ItemCategory category) {
         try {
-            List<ItemCategory> categories = categoryService.getCategoriesByParentId(parentId);
-            return Result.success(categories);
+            return Result.success(categoryService.addCategory(category));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "更新分类")
+    @PutMapping("/update")
+    public Result<Void> updateCategory(@RequestBody ItemCategory category) {
+        try {
+            categoryService.updateCategory(category);
+            return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "删除分类")
+    @DeleteMapping("/delete/{id}")
+    public Result<Void> deleteCategory(@PathVariable Long id) {
+        try {
+            categoryService.deleteCategory(id);
+            return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "启用/禁用分类")
+    @PutMapping("/toggle-status/{id}")
+    public Result<Void> toggleStatus(@PathVariable Long id) {
+        try {
+            categoryService.toggleStatus(id);
+            return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

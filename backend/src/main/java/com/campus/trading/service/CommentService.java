@@ -67,16 +67,17 @@ public class CommentService {
     }
 
     /**
-     * 删除评论
+     * 删除评论 (作者本人或管理员可删除)
      */
-    public void deleteComment(Long commentId, Long userId) {
+    public void deleteComment(Long commentId, Long userId, String role) {
         ItemComment comment = commentMapper.selectById(commentId);
         if (comment == null) {
             throw new RuntimeException("评论不存在");
         }
 
         // 只有评论作者或管理员可以删除
-        if (!comment.getUserId().equals(userId)) {
+        boolean isAdmin = "ADMIN".equals(role);
+        if (!comment.getUserId().equals(userId) && !isAdmin) {
             throw new RuntimeException("无权删除该评论");
         }
 

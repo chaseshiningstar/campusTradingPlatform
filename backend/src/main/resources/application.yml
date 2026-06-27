@@ -40,8 +40,8 @@ knife4j:
   setting:
     language: zh_cn
 
-# 大模型API配置(用于生成商品标签)
+# 大模型API配置(用于生成商品标签) - 火山引擎豆包
 llm:
-  api-url: https://api.openai.com/v1/chat/completions
-  api-key: your-api-key-here
-  model: gpt-3.5-turbo
+  api-url: https://ark.cn-beijing.volces.com/api/v3/chat/completions
+  api-key: ark-8d674387-6013-4e2d-b144-bf1abd1420fc-dabe6
+  model: doubao-seed-2-0-pro-260215

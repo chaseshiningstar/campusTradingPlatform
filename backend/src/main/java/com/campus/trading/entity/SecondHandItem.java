@@ -48,6 +48,11 @@ public class SecondHandItem {
     private Integer conditionLevel;
 
     /**
+     * 尺码/码数(服装类必填)
+     */
+    private String size;
+
+    /**
      * 卖家ID
      */
     private Long sellerId;

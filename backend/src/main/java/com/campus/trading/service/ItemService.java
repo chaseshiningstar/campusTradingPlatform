@@ -104,6 +104,7 @@ public class ItemService {
         item.setPrice(request.getPrice());
         item.setOriginalPrice(request.getOriginalPrice());
         item.setConditionLevel(request.getConditionLevel() != null ? request.getConditionLevel() : 1);
+        item.setSize(request.getSize());
         item.setSellerId(userId);
         item.setContactInfo(request.getContactInfo());
         item.setStatus(0);
@@ -139,6 +140,7 @@ public class ItemService {
         item.setPrice(request.getPrice());
         item.setOriginalPrice(request.getOriginalPrice());
         item.setConditionLevel(request.getConditionLevel());
+        item.setSize(request.getSize());
         item.setContactInfo(request.getContactInfo());
         item.setTags(request.getTags());
         item.setStatus(0);
@@ -146,6 +148,9 @@ public class ItemService {
         itemMapper.updateById(item);
 
         if (request.getImages() != null && !request.getImages().isEmpty()) {
+            // 先删除旧图片文件
+            deleteImageFiles(itemId);
+            // 删除旧记录
             imageMapper.deleteByItemId(itemId);
             saveItemImages(itemId, request.getImages());
         }
@@ -182,8 +187,32 @@ public class ItemService {
             throw new RuntimeException("无权操作该物品");
         }
 
+        // 删除磁盘上的图片文件
+        deleteImageFiles(itemId);
         imageMapper.deleteByItemId(itemId);
         itemMapper.deleteById(itemId);
+    }
+
+    /**
+     * 删除物品关联的磁盘图片文件
+     */
+    private void deleteImageFiles(Long itemId) {
+        List<ItemImage> oldImages = imageMapper.selectByItemId(itemId);
+        if (oldImages != null) {
+            for (ItemImage img : oldImages) {
+                try {
+                    // imageUrl格式: /uploads/items/xxx.png
+                    String fileName = img.getImageUrl().replace("/uploads/items/", "");
+                    Path filePath = Paths.get("./uploads/items/" + fileName);
+                    boolean deleted = Files.deleteIfExists(filePath);
+                    if (deleted) {
+                        log.info("已删除旧图片文件: {}", fileName);
+                    }
+                } catch (IOException e) {
+                    log.warn("删除旧图片文件失败: {}", img.getImageUrl());
+                }
+            }
+        }
     }
 
     private void saveItemImages(Long itemId, List<MultipartFile> images) {

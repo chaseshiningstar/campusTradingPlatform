@@ -29,6 +29,11 @@ public class ItemPublishRequest {
 
     private Integer conditionLevel;
 
+    /**
+     * 尺码/码数(服装类必填)
+     */
+    private String size;
+
     private String contactInfo;
 
     /**

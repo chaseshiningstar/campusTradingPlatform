@@ -72,6 +72,7 @@ CREATE TABLE `second_hand_item` (
     `price` DECIMAL(10, 2) NOT NULL COMMENT '价格',
     `original_price` DECIMAL(10, 2) DEFAULT NULL COMMENT '原价',
     `condition_level` TINYINT DEFAULT 1 COMMENT '新旧程度: 1-全新, 2-九成新, 3-八成新, 4-七成新, 5-六成新及以下',
+    `size` VARCHAR(30) DEFAULT NULL COMMENT '尺码/码数(服装类必填)',
     `seller_id` BIGINT NOT NULL COMMENT '卖家ID',
     `contact_info` VARCHAR(255) DEFAULT NULL COMMENT '联系方式',
     `status` TINYINT DEFAULT 0 COMMENT '状态: 0-待审核, 1-已发布, 2-已下架, 3-已售出, 4-审核驳回',
@@ -138,7 +139,7 @@ INSERT INTO `sys_role` (`role_name`, `role_code`, `description`) VALUES
 ('普通用户', 'USER', '普通用户角色'),
 ('管理员', 'ADMIN', '管理员角色');
 
--- 默认管理员账号 (密码: admin123)
+-- 默认管理员账号 (密码: 123456)
 -- 提示: 如果此哈希无效,请先注册一个普通账号,再通过以下SQL替换:
 --   UPDATE sys_user u1, sys_user u2 SET u1.password = u2.password WHERE u1.username = 'admin' AND u2.username = '你的账号';
 INSERT INTO `sys_user` (`username`, `password`, `nickname`, `email`, `status`) VALUES

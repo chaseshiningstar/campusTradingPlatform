@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -26,7 +27,14 @@ public class TagService {
     @Value("${llm.model:gpt-3.5-turbo}")
     private String model;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+
+    public TagService() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10000);  // 连接超时10秒
+        factory.setReadTimeout(50000);      // 读取超时50秒
+        this.restTemplate = new RestTemplate(factory);
+    }
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -46,6 +54,12 @@ public class TagService {
             requestBody.put("temperature", 0.3);
             requestBody.put("max_tokens", 100);
 
+            // 关闭思考模式,减少延迟和token消耗
+            Map<String, String> thinking = new HashMap<>();
+            thinking.put("type", "disabled");
+            requestBody.put("thinking", thinking);
+
+            // 仅单条user消息,无上下文
             List<Map<String, String>> messages = new ArrayList<>();
             Map<String, String> userMsg = new HashMap<>();
             userMsg.put("role", "user");
@@ -83,7 +97,7 @@ public class TagService {
      */
     private String buildPrompt(String title, String description) {
         return String.format(
-                "你是一个电商标签助手。根据以下商品信息生成6个精准的搜索标签。\n" +
+                "根据以下商品信息生成6个精准的搜索标签。\n" +
                 "要求：\n" +
                 "1. 标签用中文,每个标签2-6个字\n" +
                 "2. 涵盖品类、品牌、成色、核心卖点\n" +

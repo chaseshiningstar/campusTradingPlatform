@@ -53,7 +53,8 @@ public class CommentController {
     public Result<Void> deleteComment(@PathVariable Long id, HttpServletRequest httpRequest) {
         try {
             Long userId = (Long) httpRequest.getAttribute(JwtInterceptor.USER_ID_KEY);
-            commentService.deleteComment(id, userId);
+            String role = (String) httpRequest.getAttribute(JwtInterceptor.ROLE_KEY);
+            commentService.deleteComment(id, userId, role);
             return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());
