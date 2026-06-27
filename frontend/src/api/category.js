@@ -34,25 +34,3 @@ export function deleteCategory(id) {
 export function toggleCategoryStatus(id) {
   return request({ url: `/category/toggle-status/${id}`, method: 'put' })
 }
-import request from '@/utils/request'
-
-/**
- * 获取所有分类
- */
-export function getAllCategories() {
-  return request({
-    url: '/category/list',
-    method: 'get'
-  })
-}
-
-/**
- * 获取子分类
- */
-export function getChildren(parentId) {
-  return request({
-    url: '/category/children',
-    method: 'get',
-    params: { parentId }
-  })
-}
