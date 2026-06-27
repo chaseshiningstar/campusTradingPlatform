@@ -33,13 +33,15 @@
             <p>{{ item.description }}</p>
           </div>
 
-          <div class="contact" v-if="item.contactInfo">
+          <div class="contact" v-if="showContact && item.contactInfo">
             <h4>联系方式</h4>
             <p>{{ item.contactInfo }}</p>
           </div>
 
           <div class="actions">
-            <el-button type="primary" size="large" @click="showContact = true">联系卖家</el-button>
+            <el-button type="primary" size="large" @click="showContact = true" :disabled="!item.contactInfo">
+              {{ showContact ? '已显示联系方式' : '联系卖家' }}
+            </el-button>
             <el-button size="large" @click="handleComment">留言咨询</el-button>
           </div>
         </el-card>

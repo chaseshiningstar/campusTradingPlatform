@@ -48,8 +48,8 @@
           />
         </el-form-item>
 
-        <el-form-item label="联系方式">
-          <el-input v-model="form.contactInfo" placeholder="手机号、微信等" />
+        <el-form-item label="联系方式" prop="contactInfo">
+          <el-input v-model="form.contactInfo" placeholder="手机号、微信号、QQ号等" />
         </el-form-item>
 
         <el-form-item label="物品描述" prop="description">
@@ -163,7 +163,8 @@ const form = reactive({
 const rules = {
   title: [{ required: true, message: '请输入物品标题', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
-  price: [{ required: true, message: '请输入价格', trigger: 'blur' }]
+  price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
+  contactInfo: [{ required: true, message: '请填写联系方式', trigger: 'blur' }]
 }
 
 const sizePlaceholder = computed(() => {

@@ -34,6 +34,7 @@ public class ItemPublishRequest {
      */
     private String size;
 
+    @NotBlank(message = "联系方式不能为空")
     private String contactInfo;
 
     /**
