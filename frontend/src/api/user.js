@@ -11,6 +11,16 @@ export function getUserInfo() {
 }
 
 /**
+ * 获取指定用户的公开信息(昵称/头像)
+ */
+export function getPublicUserInfo(userId) {
+  return request({
+    url: `/user/public/${userId}`,
+    method: 'get'
+  })
+}
+
+/**
  * 更新用户信息
  */
 export function updateUserInfo(data) {

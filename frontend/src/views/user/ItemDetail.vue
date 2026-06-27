@@ -33,14 +33,25 @@
             <p>{{ item.description }}</p>
           </div>
 
-          <div class="contact" v-if="showContact && item.contactInfo">
-            <h4>联系方式</h4>
-            <p>{{ item.contactInfo }}</p>
+          <div class="seller-info" v-if="item.sellerId">
+            <h4>卖家信息</h4>
+            <div class="seller-card" @click="goToChat">
+              <el-avatar :size="40" :src="sellerAvatar || '/uploads/avatars/default.jpg'" />
+              <div class="seller-meta">
+                <span class="seller-name">{{ sellerNickname || '卖家' }}</span>
+                <span class="seller-hint">点击发起私信</span>
+              </div>
+            </div>
           </div>
 
           <div class="actions">
-            <el-button type="primary" size="large" @click="showContact = true" :disabled="!item.contactInfo">
-              {{ showContact ? '已显示联系方式' : '联系卖家' }}
+            <el-button
+              type="primary"
+              size="large"
+              @click="goToChat"
+              :disabled="!isLoggedIn || isSeller"
+            >
+              {{ isSeller ? '自己的物品' : '私信卖家' }}
             </el-button>
             <el-button size="large" @click="handleComment">留言咨询</el-button>
           </div>
@@ -154,10 +165,11 @@
 
 <script setup>
 import { ref, onMounted, computed, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getItemDetail } from '@/api/item'
 import { getComments, addComment, deleteComment } from '@/api/comment'
 import { getAllCategories } from '@/api/category'
+import { getPublicUserInfo } from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Right } from '@element-plus/icons-vue'
@@ -170,6 +182,7 @@ dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 
 const item = ref({})
@@ -177,7 +190,8 @@ const comments = ref([])
 const categories = ref([])
 const itemImages = ref([])
 const commentContent = ref('')
-const showContact = ref(false)
+const sellerNickname = ref('')
+const sellerAvatar = ref('')
 
 // 回复状态
 const replyingToId = ref(null)
@@ -203,16 +217,43 @@ const loadItemDetail = async () => {
   try {
     const res = await getItemDetail(route.params.id)
     item.value = res.data
-    
+
     // 设置物品图片
     if (res.data.images && res.data.images.length > 0) {
       itemImages.value = res.data.images
     } else {
       itemImages.value = ['/uploads/items/default.jpg']
     }
+
+    // 加载卖家公开信息
+    if (res.data.sellerId) {
+      try {
+        const sellerRes = await getPublicUserInfo(res.data.sellerId)
+        sellerNickname.value = sellerRes.data?.nickname || sellerRes.data?.username || ''
+        sellerAvatar.value = sellerRes.data?.avatar || ''
+      } catch (e) {
+        // 静默失败
+      }
+    }
   } catch (error) {
     console.error('加载物品详情失败:', error)
   }
+}
+
+// 跳转到与卖家的私信会话
+const goToChat = () => {
+  if (!isLoggedIn.value) {
+    ElMessage.warning('请先登录后再发起私信')
+    router.push('/login')
+    return
+  }
+  if (isSeller.value) {
+    ElMessage.info('不能给自己发私信')
+    return
+  }
+  const sellerId = item.value?.sellerId
+  if (!sellerId) return
+  router.push(`/chat/${sellerId}`)
 }
 
 // 加载评论
@@ -391,13 +432,45 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.description, .contact {
+.description, .contact, .seller-info {
   margin-top: 20px;
 }
 
-.description h4, .contact h4 {
+.description h4, .contact h4, .seller-info h4 {
   margin-bottom: 10px;
   color: #303133;
+}
+
+.seller-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.seller-card:hover {
+  background: #ecf5ff;
+}
+
+.seller-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.seller-name {
+  font-weight: 600;
+  color: #303133;
+  font-size: 14px;
+}
+
+.seller-hint {
+  font-size: 12px;
+  color: #909399;
 }
 
 .actions {

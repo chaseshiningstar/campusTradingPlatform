@@ -1,7 +1,11 @@
 package com.campus.trading.dto;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,16 +19,23 @@ import java.util.List;
 public class ItemPublishRequest {
 
     @NotBlank(message = "物品标题不能为空")
+    @Size(max = 50, message = "物品标题不能超过50个字符")
+    @Pattern(regexp = "^[^<>\"'&]+$", message = "物品标题不能包含非法字符 < > \" ' &")
     private String title;
 
+    @Size(max = 500, message = "物品描述不能超过500个字符")
     private String description;
 
     @NotNull(message = "分类不能为空")
     private Long categoryId;
 
     @NotNull(message = "价格不能为空")
+    @DecimalMin(value = "0.00", message = "价格不能小于0")
+    @DecimalMax(value = "99999999.99", message = "价格不能超过99999999.99")
     private BigDecimal price;
 
+    @DecimalMin(value = "0.00", message = "原价不能小于0")
+    @DecimalMax(value = "99999999.99", message = "原价不能超过99999999.99")
     private BigDecimal originalPrice;
 
     private Integer conditionLevel;
@@ -32,10 +43,8 @@ public class ItemPublishRequest {
     /**
      * 尺码/码数(服装类必填)
      */
+    @Size(max = 30, message = "尺码不能超过30个字符")
     private String size;
-
-    @NotBlank(message = "联系方式不能为空")
-    private String contactInfo;
 
     /**
      * 物品图片(多文件上传)
@@ -45,5 +54,6 @@ public class ItemPublishRequest {
     /**
      * 商品标签,逗号分隔(最多6个)
      */
+    @Size(max = 100, message = "标签总长度不能超过100个字符")
     private String tags;
 }

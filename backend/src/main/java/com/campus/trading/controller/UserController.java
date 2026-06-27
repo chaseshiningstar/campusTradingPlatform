@@ -34,6 +34,24 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "获取指定用户的公开信息(昵称/头像)")
+    @GetMapping("/public/{id}")
+    public Result<SysUser> getPublicUserInfo(@PathVariable Long id) {
+        try {
+            SysUser user = userService.getUserById(id);
+            // 仅返回公开字段,不返回密码/邮箱/手机号等敏感信息
+            SysUser publicUser = new SysUser();
+            publicUser.setId(user.getId());
+            publicUser.setUsername(user.getUsername());
+            publicUser.setNickname(user.getNickname());
+            publicUser.setAvatar(user.getAvatar());
+            publicUser.setGender(user.getGender());
+            return Result.success(publicUser);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
     @Operation(summary = "更新用户信息")
     @PutMapping("/update")
     public Result<Void> updateUserInfo(@RequestBody SysUser updateUser, HttpServletRequest request) {

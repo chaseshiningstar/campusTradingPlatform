@@ -21,3 +21,14 @@ export function register(data) {
     data
   })
 }
+
+/**
+ * 发送注册邮箱验证码
+ */
+export function sendRegisterCode(email) {
+  return request({
+    url: '/auth/send-code',
+    method: 'post',
+    data: { email }
+  })
+}

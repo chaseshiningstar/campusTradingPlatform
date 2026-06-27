@@ -1,8 +1,11 @@
 package com.campus.trading.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.campus.trading.entity.ItemCategory;
+import com.campus.trading.entity.SecondHandItem;
 import com.campus.trading.mapper.ItemCategoryMapper;
+import com.campus.trading.mapper.SecondHandItemMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +18,12 @@ import java.util.stream.Collectors;
 public class CategoryService {
 
     private final ItemCategoryMapper categoryMapper;
+    private final SecondHandItemMapper itemMapper;
+
+    /**
+     * "其他"分类名称常量
+     */
+    private static final String OTHER_CATEGORY_NAME = "其他";
 
     public List<ItemCategory> getAllCategories() {
         LambdaQueryWrapper<ItemCategory> wrapper = new LambdaQueryWrapper<>();
@@ -113,6 +122,8 @@ public class CategoryService {
             if (categoryMapper.selectCount(wrapper) > 0) {
                 throw new RuntimeException("该分类名称已存在");
             }
+            // 分类名称变更时,将其下所有商品迁移到"其他"分类
+            reassignItemsToOtherCategory(category.getId());
         }
         categoryMapper.updateById(category);
     }
@@ -128,6 +139,8 @@ public class CategoryService {
         if (categoryMapper.selectCount(childWrapper) > 0) {
             throw new RuntimeException("该分类下存在子分类,请先删除子分类");
         }
+        // 删除前,将其下所有商品迁移到"其他"分类
+        reassignItemsToOtherCategory(id);
         categoryMapper.deleteById(id);
     }
 
@@ -139,5 +152,32 @@ public class CategoryService {
         }
         category.setStatus(category.getStatus() == 1 ? 0 : 1);
         categoryMapper.updateById(category);
+    }
+
+    /**
+     * 将指定分类下的所有商品迁移到"其他"分类
+     * 若"其他"分类不存在,则不迁移(仅清空原分类关联,商品category_id置为"其他"id)
+     *
+     * @param categoryId 原分类ID
+     */
+    private void reassignItemsToOtherCategory(Long categoryId) {
+        // 查找"其他"分类(必须是顶层分类)
+        LambdaQueryWrapper<ItemCategory> otherWrapper = new LambdaQueryWrapper<>();
+        otherWrapper.eq(ItemCategory::getCategoryName, OTHER_CATEGORY_NAME)
+                .eq(ItemCategory::getParentId, 0L);
+        ItemCategory otherCategory = categoryMapper.selectOne(otherWrapper);
+        if (otherCategory == null) {
+            // "其他"分类不存在,无法迁移
+            return;
+        }
+        // 不能把"其他"分类下的商品迁移到自身
+        if (otherCategory.getId().equals(categoryId)) {
+            return;
+        }
+        // 批量更新该分类下所有商品的category_id为"其他"分类ID
+        LambdaUpdateWrapper<SecondHandItem> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(SecondHandItem::getCategoryId, categoryId)
+                .set(SecondHandItem::getCategoryId, otherCategory.getId());
+        itemMapper.update(null, updateWrapper);
     }
 }

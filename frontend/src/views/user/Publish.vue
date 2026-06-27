@@ -20,13 +20,14 @@
 
         <el-form-item label="价格" prop="price">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <el-input-number v-model="form.price" :min="0" :precision="2" :step="1" style="width: 200px" />
+            <el-input-number v-model="form.price" :min="0" :max="99999999.99" :precision="2" :step="1" style="width: 200px" />
             <el-tag v-if="priceEstimated" type="warning" size="small">AI 预估</el-tag>
+            <span style="font-size: 12px; color: #909399;">上限 99,999,999.99 元</span>
           </div>
         </el-form-item>
 
         <el-form-item label="原价">
-          <el-input-number v-model="form.originalPrice" :min="0" :precision="2" :step="1" style="width: 200px" />
+          <el-input-number v-model="form.originalPrice" :min="0" :max="99999999.99" :precision="2" :step="1" style="width: 200px" />
         </el-form-item>
 
         <el-form-item label="新旧程度">
@@ -46,10 +47,6 @@
             maxlength="30"
             style="width: 300px"
           />
-        </el-form-item>
-
-        <el-form-item label="联系方式" prop="contactInfo">
-          <el-input v-model="form.contactInfo" placeholder="手机号、微信号、QQ号等" />
         </el-form-item>
 
         <el-form-item label="物品描述" prop="description">
@@ -154,18 +151,26 @@ const form = reactive({
   originalPrice: null,
   conditionLevel: 2,
   size: '',
-  contactInfo: '',
   description: '',
   tags: [],
   images: []
 })
 
 const rules = {
-  title: [{ required: true, message: '请输入物品标题', trigger: 'blur' }],
+  title: [
+    { required: true, message: '请输入物品标题', trigger: 'blur' },
+    { max: 50, message: '标题不能超过50个字符', trigger: 'blur' },
+    { pattern: /^[^<>"'&]+$/, message: '标题不能包含非法字符 < > " \' &', trigger: 'blur' }
+  ],
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
-  price: [{ required: true, message: '请输入价格', trigger: 'blur' }],
-  contactInfo: [{ required: true, message: '请填写联系方式', trigger: 'blur' }],
-  description: [{ required: true, message: '请输入物品描述', trigger: 'blur' }]
+  price: [
+    { required: true, message: '请输入价格', trigger: 'blur' },
+    { type: 'number', min: 0, max: 99999999.99, message: '价格范围 0 ~ 99999999.99', trigger: 'blur' }
+  ],
+  description: [
+    { required: true, message: '请输入物品描述', trigger: 'blur' },
+    { max: 500, message: '描述不能超过500个字符', trigger: 'blur' }
+  ]
 }
 
 const sizePlaceholder = computed(() => {

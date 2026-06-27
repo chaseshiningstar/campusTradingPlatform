@@ -1,38 +1,39 @@
 <template>
   <div class="messages-page">
     <el-card>
-      <h3>我的消息</h3>
-      <p class="subtitle">您发布物品收到的留言</p>
+      <div class="header">
+        <div>
+          <h3>私信</h3>
+          <p class="subtitle">与其他用户的即时私信</p>
+        </div>
+        <el-badge :value="unreadCount" :hidden="unreadCount === 0" :max="99">
+          <el-icon :size="20" color="#409eff"><ChatDotRound /></el-icon>
+        </el-badge>
+      </div>
 
       <div v-loading="loading">
-        <div v-if="messages.length === 0" class="empty-state">
-          <el-empty description="暂无留言消息" />
+        <div v-if="conversations.length === 0" class="empty-state">
+          <el-empty description="暂无私信会话,去物品详情页发起私信吧" />
         </div>
 
-        <div v-else class="message-list">
-          <div v-for="msg in messages" :key="msg.id" class="message-item" @click="goToItem(msg.itemId)">
-            <div class="msg-avatar">
-              <el-avatar :size="44" :src="msg.avatar || '/uploads/avatars/default.jpg'" />
+        <div v-else class="conversation-list">
+          <div
+            v-for="conv in conversations"
+            :key="conv.id"
+            class="conversation-item"
+            :class="{ unread: isUnread(conv) }"
+            @click="goToChat(getOtherUserId(conv))"
+          >
+            <div class="conv-avatar">
+              <el-avatar :size="48" :src="getOtherAvatar(conv) || '/uploads/avatars/default.jpg'" />
+              <span v-if="isUnread(conv)" class="unread-dot"></span>
             </div>
-            <div class="msg-body">
-              <div class="msg-header">
-                <span class="msg-user">{{ msg.nickname || msg.username }}</span>
-                <span v-if="msg.replyToUserNickname" class="msg-reply-to">
-                  <el-popover placement="top" :width="260" trigger="hover">
-                    <template #reference>
-                      <span class="reply-link"><el-icon><Right /></el-icon> 回复 @{{ msg.replyToUserNickname }}</span>
-                    </template>
-                    <div class="parent-preview">{{ msg.parentContent || '(内容已删除)' }}</div>
-                  </el-popover>
-                </span>
-                <span class="msg-time">{{ formatTime(msg.createTime) }}</span>
+            <div class="conv-body">
+              <div class="conv-header">
+                <span class="conv-name">{{ getOtherName(conv) }}</span>
+                <span class="conv-time">{{ formatTime(conv.createTime) }}</span>
               </div>
-              <p class="msg-content">{{ msg.content }}</p>
-              <div class="msg-item-title">
-                <el-icon><Goods /></el-icon>
-                <span>{{ msg.itemTitle || '未知物品' }}</span>
-                <el-icon><ArrowRight /></el-icon>
-              </div>
+              <p class="conv-preview">{{ conv.content }}</p>
             </div>
           </div>
         </div>
@@ -42,10 +43,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getMyMessages } from '@/api/comment'
-import { Right, Goods, ArrowRight } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+import { getConversations } from '@/api/message'
+import { chatWebSocket } from '@/utils/websocket'
+import { ChatDotRound } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import 'dayjs/locale/zh-cn'
@@ -54,32 +57,94 @@ dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
 const router = useRouter()
+const userStore = useUserStore()
 
-const messages = ref([])
+const conversations = ref([])
 const loading = ref(false)
+const unreadCount = computed(() => userStore.unreadCount)
 
-const loadMessages = async () => {
+let unsubscribe = null
+
+const loadConversations = async () => {
   loading.value = true
   try {
-    const res = await getMyMessages()
-    messages.value = res.data || []
+    const res = await getConversations()
+    conversations.value = res.data || []
+    // 同步未读数
+    userStore.refreshUnreadCount()
   } catch (error) {
-    console.error('加载消息失败:', error)
+    console.error('加载会话失败:', error)
   } finally {
     loading.value = false
   }
 }
 
-const formatTime = (time) => {
-  return dayjs(time).format('YYYY-MM-DD HH:mm')
+// 判断某条会话是否未读(我是接收者且is_read=0)
+const isUnread = (conv) => {
+  return conv.receiverId === userStore.userInfo?.id && conv.isRead === 0
 }
 
-const goToItem = (itemId) => {
-  router.push({ path: `/item/${itemId}`, hash: '#comments' })
+// 获取对方用户ID
+const getOtherUserId = (conv) => {
+  const myId = userStore.userInfo?.id
+  return conv.senderId === myId ? conv.receiverId : conv.senderId
+}
+
+// 获取对方头像
+const getOtherAvatar = (conv) => {
+  const myId = userStore.userInfo?.id
+  if (conv.senderId === myId) {
+    return conv.receiverAvatar
+  }
+  return conv.senderAvatar
+}
+
+// 获取对方昵称
+const getOtherName = (conv) => {
+  const myId = userStore.userInfo?.id
+  if (conv.senderId === myId) {
+    return conv.receiverNickname || conv.receiverUsername || '未知用户'
+  }
+  return conv.senderNickname || conv.senderUsername || '未知用户'
+}
+
+const formatTime = (time) => {
+  if (!time) return ''
+  const now = dayjs()
+  const t = dayjs(time)
+  if (now.diff(t, 'day') === 0) {
+    return t.format('HH:mm')
+  }
+  if (now.diff(t, 'day') < 7) {
+    return t.format('MM-DD HH:mm')
+  }
+  return t.format('YYYY-MM-DD')
+}
+
+const goToChat = (userId) => {
+  router.push(`/chat/${userId}`)
+}
+
+// 监听WebSocket新消息,实时刷新会话列表
+const onWsMessage = (msg) => {
+  if (msg.type === 'PRIVATE_MESSAGE') {
+    // 收到新私信,刷新会话列表并增加未读
+    loadConversations()
+    userStore.incrementUnread()
+  } else if (msg.type === 'MESSAGE_SENT') {
+    // 自己在其他设备发送了消息,刷新会话列表
+    loadConversations()
+  }
 }
 
 onMounted(() => {
-  loadMessages()
+  loadConversations()
+  // 订阅WebSocket消息
+  unsubscribe = chatWebSocket.onMessage(onWsMessage)
+})
+
+onUnmounted(() => {
+  if (unsubscribe) unsubscribe()
 })
 </script>
 
@@ -87,6 +152,13 @@ onMounted(() => {
 .messages-page {
   max-width: 800px;
   margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
 .messages-page h3 {
@@ -97,116 +169,86 @@ onMounted(() => {
 .subtitle {
   font-size: 13px;
   color: #909399;
-  margin-bottom: 20px;
+  margin: 0;
 }
 
 .empty-state {
   padding: 40px 0;
 }
 
-.message-list {
+.conversation-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
-.message-item {
+.conversation-item {
   display: flex;
   gap: 14px;
-  padding: 16px 0;
-  border-bottom: 1px solid #ebeef5;
+  padding: 14px 12px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.message-item:hover {
+.conversation-item:hover {
   background: #f5f7fa;
-  margin: 0 -16px;
-  padding-left: 16px;
-  padding-right: 16px;
-  border-radius: 6px;
 }
 
-.msg-avatar {
+.conversation-item.unread {
+  background: #ecf5ff;
+}
+
+.conversation-item.unread:hover {
+  background: #e0efff;
+}
+
+.conv-avatar {
+  position: relative;
   flex-shrink: 0;
-  padding-top: 2px;
 }
 
-.msg-body {
+.unread-dot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  background: #f56c6c;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.conv-body {
   flex: 1;
   min-width: 0;
 }
 
-.msg-header {
+.conv-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
-  flex-wrap: wrap;
+  margin-bottom: 4px;
 }
 
-.msg-user {
+.conv-name {
   font-weight: 600;
   color: #303133;
   font-size: 14px;
 }
 
-.msg-reply-to {
-  font-size: 12px;
-  color: #409eff;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.msg-time {
+.conv-time {
   font-size: 12px;
   color: #909399;
-  margin-left: auto;
 }
 
-.msg-content {
+.conv-preview {
+  margin: 0;
   color: #606266;
-  font-size: 14px;
-  line-height: 1.5;
-  margin: 0 0 8px 0;
-  word-break: break-word;
-}
-
-.msg-item-title {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   font-size: 13px;
-  color: #409eff;
-  padding: 6px 10px;
-  background: #ecf5ff;
-  border-radius: 4px;
-  display: inline-flex;
-}
-
-.msg-item-title span {
-  max-width: 200px;
+  line-height: 1.5;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.reply-link {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.reply-link:hover {
-  text-decoration: underline;
-}
-
-.parent-preview {
-  font-size: 13px;
-  color: #303133;
-  line-height: 1.5;
-  word-break: break-word;
 }
 </style>

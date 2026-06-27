@@ -4,7 +4,9 @@ import com.campus.trading.common.Result;
 import com.campus.trading.dto.LoginRequest;
 import com.campus.trading.dto.LoginResponse;
 import com.campus.trading.dto.RegisterRequest;
+import com.campus.trading.dto.SendCodeRequest;
 import com.campus.trading.service.AuthService;
+import com.campus.trading.service.EmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailService emailService;
 
     @Operation(summary = "用户登录")
     @PostMapping("/login")
@@ -38,6 +41,17 @@ public class AuthController {
     public Result<Void> register(@Valid @RequestBody RegisterRequest request) {
         try {
             authService.register(request);
+            return Result.success();
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "发送注册邮箱验证码")
+    @PostMapping("/send-code")
+    public Result<Void> sendRegisterCode(@Valid @RequestBody SendCodeRequest request) {
+        try {
+            authService.sendRegisterCode(request.getEmail());
             return Result.success();
         } catch (Exception e) {
             return Result.error(e.getMessage());

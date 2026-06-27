@@ -6,12 +6,30 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/campus_trading?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
     username: root
-    password: 1234
+    password: 123456
 
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 50MB
+
+  # 邮件服务配置(用于注册邮箱验证码)
+  # 提示: 请替换为您的真实邮箱SMTP信息,推荐使用QQ邮箱或163邮箱
+  # QQ邮箱: host=smtp.qq.com, 用户名=完整QQ邮箱, 密码=授权码(非QQ密码)
+  # 163邮箱: host=smtp.163.com, 用户名=完整163邮箱, 密码=授权码
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: 1071558954@qq.com
+    password: jfqognyfsygubbdf
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+    default-encoding: UTF-8
 
 mybatis-plus:
   configuration:
@@ -45,3 +63,17 @@ llm:
   api-url: https://ark.cn-beijing.volces.com/api/v3/chat/completions
   api-key: ark-8d674387-6013-4e2d-b144-bf1abd1420fc-dabe6
   model: doubao-seed-2-0-pro-260215
+
+# 邮件验证码配置
+email:
+  # 验证码有效期(分钟)
+  expire-minutes: 5
+  # 同一邮箱发送间隔(秒),防止频繁发送
+  resend-interval-seconds: 60
+  # 发件人显示名称
+  sender-name: 校园二手交易平台
+  # 是否启用邮件发送(true=真实发送, false=仅打印到日志,方便开发调试)
+  enabled: false
+  # 当enabled=false时,验证码统一为此值(开发模式)
+  dev-code: "123456"
+

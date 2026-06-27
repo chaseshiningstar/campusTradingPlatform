@@ -54,7 +54,19 @@ const routes = [
         path: 'messages',
         name: 'Messages',
         component: () => import('@/views/user/Messages.vue'),
-        meta: { title: '我的消息', requiresAuth: true }
+        meta: { title: '私信', requiresAuth: true }
+      },
+      {
+        path: 'comments',
+        name: 'Comments',
+        component: () => import('@/views/user/Comments.vue'),
+        meta: { title: '留言通知', requiresAuth: true }
+      },
+      {
+        path: 'chat/:userId',
+        name: 'PrivateChat',
+        component: () => import('@/views/user/PrivateChat.vue'),
+        meta: { title: '私信对话', requiresAuth: true }
       }
     ]
   },

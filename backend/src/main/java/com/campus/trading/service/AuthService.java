@@ -28,6 +28,7 @@ public class AuthService {
     private final SysUserMapper userMapper;
     private final SysRoleMapper roleMapper;
     private final JwtUtil jwtUtil;
+    private final EmailService emailService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     /**
@@ -76,7 +77,21 @@ public class AuthService {
     }
 
     /**
-     * 用户注册
+     * 发送注册验证码
+     */
+    public void sendRegisterCode(String email) {
+        // 检查邮箱是否已被注册
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysUser::getEmail, email);
+        Long existCount = userMapper.selectCount(wrapper);
+        if (existCount > 0) {
+            throw new RuntimeException("该邮箱已被注册,请直接登录");
+        }
+        emailService.sendRegisterCode(email);
+    }
+
+    /**
+     * 用户注册(需校验邮箱验证码)
      */
     @Transactional
     public void register(RegisterRequest request) {
@@ -84,6 +99,19 @@ public class AuthService {
         SysUser existUser = userMapper.selectByUsername(request.getUsername());
         if (existUser != null) {
             throw new RuntimeException("用户名已存在");
+        }
+
+        // 检查邮箱是否已被注册
+        LambdaQueryWrapper<SysUser> emailWrapper = new LambdaQueryWrapper<>();
+        emailWrapper.eq(SysUser::getEmail, request.getEmail());
+        Long emailCount = userMapper.selectCount(emailWrapper);
+        if (emailCount > 0) {
+            throw new RuntimeException("该邮箱已被注册");
+        }
+
+        // 校验邮箱验证码
+        if (!emailService.verifyCode(request.getEmail(), request.getEmailCode())) {
+            throw new RuntimeException("邮箱验证码错误或已过期");
         }
 
         // 创建新用户
@@ -103,7 +131,7 @@ public class AuthService {
             LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(SysUser::getUsername, request.getUsername());
             SysUser newUser = userMapper.selectOne(wrapper);
-            
+
             // 插入用户角色关联(使用原生SQL)
             userMapper.insertUserRole(newUser.getId(), userRole.getId());
         }

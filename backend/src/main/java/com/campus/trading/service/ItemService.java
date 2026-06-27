@@ -108,7 +108,6 @@ public class ItemService {
         item.setConditionLevel(request.getConditionLevel() != null ? request.getConditionLevel() : 1);
         item.setSize(request.getSize());
         item.setSellerId(userId);
-        item.setContactInfo(request.getContactInfo());
         item.setStatus(0);
         item.setViewCount(0);
         item.setTags(request.getTags());
@@ -143,7 +142,6 @@ public class ItemService {
         item.setOriginalPrice(request.getOriginalPrice());
         item.setConditionLevel(request.getConditionLevel());
         item.setSize(request.getSize());
-        item.setContactInfo(request.getContactInfo());
         item.setTags(request.getTags());
         item.setStatus(0);
 
