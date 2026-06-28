@@ -1,0 +1,48 @@
+# ============================================================
+# systemd 服务单元 - 校园二手交易平台后端
+# 安装路径: /etc/systemd/system/campus-trading.service
+# 启动: systemctl start campus-trading
+# 开机自启: systemctl enable campus-trading
+# ============================================================
+[Unit]
+Description=Campus Trading Platform Backend Service
+Documentation=https://github.com/your-repo/campus-trading
+After=network.target mysqld.service
+Wants=mysqld.service
+
+[Service]
+Type=simple
+User=campus
+Group=campus
+WorkingDirectory=/opt/campus-trading/backend
+
+# 启动命令 - 使用 prod profile
+ExecStart=/usr/bin/java \
+    -Xms512m \
+    -Xmx1024m \
+    -Dfile.encoding=UTF-8 \
+    -Duser.timezone=Asia/Shanghai \
+    -jar /opt/campus-trading/backend/campus-trading-1.0.0.jar \
+    --spring.profiles.active=prod
+
+# 优雅关闭
+SuccessExitStatus=143
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+# 自动重启
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# 标准输出/错误日志
+StandardOutput=append:/opt/campus-trading/logs/stdout.log
+StandardError=append:/opt/campus-trading/logs/stderr.log
+
+# 环境变量(可覆盖 application-prod.yml 中的配置)
+# Environment=SPRING_DATASOURCE_PASSWORD=your_strong_password
+# Environment=SPRING_MAIL_PASSWORD=your_mail_auth_code
+
+[Install]
+WantedBy=multi-user.target

@@ -1,6 +1,7 @@
 package com.campus.trading.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -58,8 +59,9 @@ public class SecondHandItem {
     private Long sellerId;
 
     /**
-     * 联系方式
+     * 联系方式(已废弃,不再公开展示,仅保留兼容旧数据)
      */
+    @JsonIgnore
     private String contactInfo;
 
     /**

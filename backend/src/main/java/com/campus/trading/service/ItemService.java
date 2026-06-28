@@ -11,6 +11,7 @@ import com.campus.trading.mapper.ItemImageMapper;
 import com.campus.trading.mapper.SecondHandItemMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +34,9 @@ public class ItemService {
 
     private final SecondHandItemMapper itemMapper;
     private final ItemImageMapper imageMapper;
+
+    @Value("${file.upload-path:./uploads/}")
+    private String uploadPath;
 
     /**
      * 分页查询物品列表
@@ -216,11 +220,12 @@ public class ItemService {
     private void deleteImageFiles(Long itemId) {
         List<ItemImage> oldImages = imageMapper.selectByItemId(itemId);
         if (oldImages != null) {
+            String basePath = uploadPath.endsWith("/") ? uploadPath : uploadPath + "/";
             for (ItemImage img : oldImages) {
                 try {
                     // imageUrl格式: /uploads/items/xxx.png
                     String fileName = img.getImageUrl().replace("/uploads/items/", "");
-                    Path filePath = Paths.get("./uploads/items/" + fileName);
+                    Path filePath = Paths.get(basePath + "items/" + fileName);
                     boolean deleted = Files.deleteIfExists(filePath);
                     if (deleted) {
                         log.info("已删除旧图片文件: {}", fileName);
@@ -233,8 +238,9 @@ public class ItemService {
     }
 
     private void saveItemImages(Long itemId, List<MultipartFile> images) {
-        String uploadDir = "./uploads/items/";
-        File dir = new File(uploadDir);
+        String basePath = uploadPath.endsWith("/") ? uploadPath : uploadPath + "/";
+        String itemsDir = basePath + "items/";
+        File dir = new File(itemsDir);
         if (!dir.exists()) {
             dir.mkdirs();
         }
@@ -251,7 +257,7 @@ public class ItemService {
                         originalFilename.substring(originalFilename.lastIndexOf(".")) : ".jpg";
                 String fileName = UUID.randomUUID() + extension;
 
-                Path path = Paths.get(uploadDir + fileName);
+                Path path = Paths.get(itemsDir + fileName);
                 Files.write(path, file.getBytes());
 
                 ItemImage itemImage = new ItemImage();

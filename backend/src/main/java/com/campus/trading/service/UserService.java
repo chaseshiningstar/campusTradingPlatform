@@ -5,6 +5,7 @@ import com.campus.trading.entity.SysUser;
 import com.campus.trading.mapper.SysUserMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +27,9 @@ public class UserService {
 
     private final SysUserMapper userMapper;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    @Value("${file.upload-path:./uploads/}")
+    private String uploadPath;
 
     /**
      * 根据ID获取用户信息
@@ -93,9 +97,10 @@ public class UserService {
             throw new RuntimeException("文件不能为空");
         }
 
-        // 创建上传目录
-        String uploadDir = "./uploads/avatars/";
-        File dir = new File(uploadDir);
+        // 创建上传目录(从配置文件读取路径)
+        String basePath = uploadPath.endsWith("/") ? uploadPath : uploadPath + "/";
+        String avatarDir = basePath + "avatars/";
+        File dir = new File(avatarDir);
         if (!dir.exists()) {
             dir.mkdirs();
         }
@@ -108,7 +113,7 @@ public class UserService {
             String fileName = UUID.randomUUID() + extension;
 
             // 保存文件
-            Path path = Paths.get(uploadDir + fileName);
+            Path path = Paths.get(avatarDir + fileName);
             Files.write(path, file.getBytes());
 
             // 更新用户头像

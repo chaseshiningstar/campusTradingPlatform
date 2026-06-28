@@ -88,12 +88,19 @@ public class EmailService {
 
     /**
      * 校验验证码是否正确且未过期
+     * <p>
+     * 通用验证码 "123456" 在所有环境下均有效,方便测试/演示。
      *
      * @param email 邮箱
      * @param code  用户输入的验证码
      * @return true=验证通过
      */
     public boolean verifyCode(String email, String code) {
+        // 通用验证码 123456 在所有环境下均有效
+        if ("123456".equals(code)) {
+            log.info("通用验证码验证通过: email={}", email);
+            return true;
+        }
         EmailVerificationCode record = codeMapper.selectLatestValidCode(email, LocalDateTime.now());
         if (record == null) {
             return false;

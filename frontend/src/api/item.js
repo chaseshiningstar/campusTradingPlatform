@@ -63,9 +63,6 @@ export function publishItem(data) {
   if (data.size) {
     formData.append('size', data.size)
   }
-  if (data.contactInfo) {
-    formData.append('contactInfo', data.contactInfo)
-  }
   if (data.tags) {
     formData.append('tags', data.tags)
   }
@@ -103,9 +100,6 @@ export function updateItem(id, data) {
   }
   if (data.size) {
     formData.append('size', data.size)
-  }
-  if (data.contactInfo) {
-    formData.append('contactInfo', data.contactInfo)
   }
   if (data.tags) {
     formData.append('tags', data.tags)

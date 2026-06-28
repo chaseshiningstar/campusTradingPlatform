@@ -1,0 +1,99 @@
+# ============================================================
+# 生产环境配置文件 - 部署时通过 --spring.profiles.active=prod 激活
+# 使用方式: java -jar campus-trading.jar --spring.profiles.active=prod
+# ============================================================
+server:
+  port: 8080
+  # 生产环境开启优雅关闭
+  shutdown: graceful
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 数据库连接(部署时按实际地址修改)
+    url: jdbc:mysql://localhost:3306/campus_trading?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456  # 部署时务必修改为强密码
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+  # 邮件服务(部署时替换为真实邮箱)
+  mail:
+    host: smtp.qq.com
+    port: 587
+    username: your-email@qq.com
+    password: your-smtp-authorization-code
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+    default-encoding: UTF-8
+
+  jackson:
+    time-zone: Asia/Shanghai
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    # 生产环境关闭SQL日志
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# JWT配置(部署时建议修改secret为更长的随机字符串)
+jwt:
+  secret: campus-trading-platform-secret-key-2024-abcdefg-change-this-in-production
+  expiration: 86400000
+
+# 文件上传配置(使用绝对路径,避免相对路径歧义)
+file:
+  upload-path: /opt/campus-trading/uploads/
+  access-path: /uploads/**
+
+# Knife4j - 生产环境可关闭
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# 大模型API配置
+llm:
+  api-url: https://ark.cn-beijing.volces.com/api/v3/chat/completions
+  api-key: ark-8d674387-6013-4e2d-b144-bf1abd1420fc-dabe6
+  model: doubao-seed-2-0-pro-260215
+
+# 邮件验证码配置
+email:
+  expire-minutes: 5
+  resend-interval-seconds: 60
+  sender-name: 校园二手交易平台
+  # 生产环境启用真实邮件发送
+  enabled: true
+  dev-code: "123456"
+
+# 日志配置
+logging:
+  file:
+    name: /opt/campus-trading/logs/app.log
+    max-size: 50MB
+    max-history: 30
+  level:
+    root: INFO
+    com.campus.trading: INFO
+    org.springframework.web: WARN
